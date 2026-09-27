@@ -1,5 +1,5 @@
 // Household Budget & Car Payoff Planner — offline service worker (v3)
-var CACHE = 'budget-planner-v6';
+var CACHE = 'budget-planner-v7';
 var PRECACHE = [
   './',
   'index.html',
