@@ -50,7 +50,7 @@
     .row label { font-size: 0.9rem; font-weight: 500; }
     .row .hint { display: block; font-size: 0.76rem; color: var(--muted); font-weight: 400; }
     .input-wrap { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
-    input[type="text" inputmode="decimal" pattern="[0-9.]*"], select { width: 115px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.92rem; font-weight: 600; text-align: right; }
+    input.num, select { width: 115px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; font-weight: 600; text-align: right; }
     select { width: 100%; text-align: left; }
     input[type="range"] { width: 100%; accent-color: var(--blue); cursor: pointer; }
     .slider-block { padding: 10px 0; border-bottom: 1px dashed #f1f5f9; }
@@ -72,9 +72,9 @@
     .cal-table { width: 100%; border-collapse: collapse; }
     .cal-table th, .cal-table td { text-align: left; padding: 7px 4px; border-bottom: 1px solid #eee; font-size: 0.93rem; }
     .cal-table th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
-    .cal-table td select { width: 118px; padding: 6px 8px; font-size: 0.9rem; }
-    .cal-table td input[type="text"] { width: 100%; padding: 6px 8px; font-size: 0.9rem; }
-    .cal-table td input[type="text" inputmode="decimal" pattern="[0-9.]*"] { width: 92px; padding: 6px 8px; font-size: 0.9rem; }
+    .cal-table td select { width: 118px; padding: 6px 8px; font-size: 1rem; }
+    .cal-table td input[type="text"] { width: 100%; padding: 6px 8px; font-size: 1rem; }
+    .cal-table td input.num { width: 92px; padding: 6px 8px; font-size: 1rem; }
     .cal-amt { font-variant-numeric: tabular-nums; }
     .week-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
     .week-box { background: #f8f9fa; border-radius: 8px; padding: 8px 10px; }
@@ -266,7 +266,7 @@
               <option value="city">City</option>
               <option value="county">County</option>
             </select>
-            <input type="text" inputmode="decimal" id="customLocRate" placeholder="Rate %" style="flex:1; min-width:70px;" oninput="this.removeAttribute('data-auto')" />
+            <input type="text" class="num" inputmode="decimal" id="customLocRate" placeholder="Rate %" style="flex:1; min-width:70px;" oninput="this.removeAttribute('data-auto')" />
             <button type="button" id="customLocAdd" onclick="saveCustomLocality()">Add</button>
           </div>
           <div id="locSuggest" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;"></div>
@@ -321,20 +321,20 @@
           <label>Hours Per Week
             <span class="hint">Used only for hourly rate</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="hoursPerWeek" value="" placeholder="40" step="1" oninput="onHoursInput()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="hoursPerWeek" value="" placeholder="40" step="1" oninput="onHoursInput()" /></div>
         </div>
         <div class="row">
           <label><span id="grossLabel">Gross Annual Income ($/yr)</span>
             <span class="hint" id="taxBreakdownHint">Enter gross pay to estimate take-home</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual" value="" step="1000" oninput="onGrossInput(1)" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual" value="" step="1000" oninput="onGrossInput(1)" /></div>
         </div>
         <div class="row full">
           <label class="check-label"><input type="checkbox" id="secondIncomeEnabled" onchange="toggleSecondIncome()" /> Add a second income (stays hidden until checked)</label>
         </div>
         <div class="row hidden" id="secondIncomeRow">
           <label>Second Gross Annual Income ($/yr)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual2" value="" step="1000" oninput="onGrossInput(2)" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual2" value="" step="1000" oninput="onGrossInput(2)" /></div>
         </div>
         <div class="row hidden" id="secondFreqRow">
           <label>Second Pay Frequency</label>
@@ -363,7 +363,7 @@
           <label>Monthly Net Take-Home Pay ($)
             <span class="hint" id="netCalcHint">Auto-filled from gross above, or type your own</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="netIncome" value="" step="25" oninput="markNetManual()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="netIncome" value="" step="25" oninput="markNetManual()" /></div>
         </div>
       </div>
 
@@ -383,37 +383,37 @@
         </div>
         <div class="row hidden" id="housingPaymentRow">
           <label><span id="housingPaymentLabel">Monthly Mortgage Payment ($/mo)</span></label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="housingPaymentMo" value="" step="25" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="housingPaymentMo" value="" step="25" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Estimated Home Value ($)
             <span class="hint">Used with ZIP to estimate property tax</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeValue" value="" step="10000" oninput="recalc();zipTaxLookup()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="homeValue" value="" step="10000" oninput="recalc();zipTaxLookup()" /></div>
         </div>
         <div class="row">
           <label>ZIP Code
             <span class="hint" id="zipTaxNote">Enter ZIP + home value to estimate tax</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9]*" id="zipCode" value="" maxlength="5" oninput="zipTaxLookup()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9]*" id="zipCode" value="" maxlength="5" oninput="zipTaxLookup()" /></div>
         </div>
         <div class="row">
           <label>Annual Property Tax ($/yr)
             <span class="hint">Auto-divides by 12 mos: <strong id="propTaxMoText">$0.00/mo</strong> — leave at $0 if you rent</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="propTaxAnnual" value="" step="10" oninput="taxManual=true;recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="propTaxAnnual" value="" step="10" oninput="taxManual=true;recalc()" /></div>
         </div>
         <div class="row">
           <label>Home / Property Insurance ($/yr)
             <span class="hint">Auto-divides by 12 mos: <strong id="homeInsMoText">$0.00/mo</strong></span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeInsAnnual" value="" step="50" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="homeInsAnnual" value="" step="50" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Home & Land Upkeep / Repairs ($/mo)
             <span class="hint">HVAC, roof deductible, well/septic, fencing</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeMaintMo" value="" step="10" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="homeMaintMo" value="" step="10" oninput="recalc()" /></div>
         </div>
       </div>
 
@@ -425,19 +425,19 @@
         </div>
         <div class="row">
           <label>Electricity ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="electricMo" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="electricMo" value="" step="5" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Water + Trash ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="waterMo" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="waterMo" value="" step="5" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Internet & Streaming ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="internetMo" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="internetMo" value="" step="5" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Cell Phones (2 Lines) ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="phonesMo" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="phonesMo" value="" step="5" oninput="recalc()" /></div>
         </div>
       </div>
 
@@ -449,41 +449,41 @@
         </div>
         <div class="row">
           <label>Base Monthly Car Payment ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="carPaymentMo" value="" step="10" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="carPaymentMo" value="" step="10" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>6-Month Auto Insurance Premium ($ / 6 mos)
             <span class="hint">Auto-divides by 6 mos: <strong id="autoInsMoText">$0.00/mo</strong></span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="autoInsSixMo" value="" step="25" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="autoInsSixMo" value="" step="25" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Estimated Monthly Driving (Miles/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="milesMo" value="" step="50" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="milesMo" value="" step="50" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Fuel Economy (MPG)
             <span class="hint">Leave blank to use 25 MPG</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="mpg" value="" placeholder="25" step="1" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="mpg" value="" placeholder="25" step="1" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Local Regular Gas Price ($/gal)
             <span class="hint">Computed Monthly Fuel: <strong id="fuelMoText">$0.00/mo</strong></span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="gasPrice" value="" step="0.05" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="gasPrice" value="" step="0.05" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Oil Change Cost ($ per service)
             <span class="hint">About every 9,000 mi • Monthly oil reserve: <strong id="oilMoText">$0.00/mo</strong></span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="oilCostPerService" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="oilCostPerService" value="" step="5" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Tires, Brakes & Registration ($/mo)
             <span class="hint">$15 tires + $7.50 registration/emissions + $22.50 wear</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="tiresRegMo" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="tiresRegMo" value="" step="5" oninput="recalc()" /></div>
         </div>
       </div>
     </div>
@@ -498,19 +498,19 @@
         </div>
         <div class="row">
           <label>Groceries & Household Supplies Base ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="groceriesMo" value="" step="25" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="groceriesMo" value="" step="25" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Dining Out & Weekend Meals ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="diningMo" value="" step="25" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="diningMo" value="" step="25" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Out-of-Pocket Medical / Dental / Rx Base ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="medicalBaseMo" value="" step="10" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="medicalBaseMo" value="" step="10" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Personal, Hobbies & Projects Base ($/mo)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="personalMo" value="" step="25" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="personalMo" value="" step="25" oninput="recalc()" /></div>
         </div>
       </div>
 
@@ -523,21 +523,21 @@
         <div class="slider-block">
           <div class="slider-top">
             <label><strong>Food & Grocery Cushion</strong> <span class="hint" style="display:inline;">(Total Groceries + Cushion: <span id="totFoodText">$0</span>/mo)</span></label>
-            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="cushionFood" value="" step="10" oninput="syncSlider('cushionFood','cushionFoodRng'); recalc();" />
+            <input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="cushionFood" value="" step="10" oninput="syncSlider('cushionFood','cushionFoodRng'); recalc();" />
           </div>
           <input type="range" id="cushionFoodRng" min="0" max="400" step="10" value="" oninput="syncInput('cushionFoodRng','cushionFood'); recalc();" />
         </div>
         <div class="slider-block">
           <div class="slider-top">
             <label><strong>Medical & Rx Cushion</strong> <span class="hint" style="display:inline;">(Total Medical + Cushion: <span id="totMedText">$0</span>/mo)</span></label>
-            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="cushionMed" value="" step="10" oninput="syncSlider('cushionMed','cushionMedRng'); recalc();" />
+            <input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="cushionMed" value="" step="10" oninput="syncSlider('cushionMed','cushionMedRng'); recalc();" />
           </div>
           <input type="range" id="cushionMedRng" min="0" max="400" step="10" value="" oninput="syncInput('cushionMedRng','cushionMed'); recalc();" />
         </div>
         <div class="slider-block">
           <div class="slider-top">
             <label><strong>Other Needs & Utility Spike Cushion</strong> <span class="hint" style="display:inline;">(Summer AC / unexpected needs)</span></label>
-            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="cushionOther" value="" step="10" oninput="syncSlider('cushionOther','cushionOtherRng'); recalc();" />
+            <input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="cushionOther" value="" step="10" oninput="syncSlider('cushionOther','cushionOtherRng'); recalc();" />
           </div>
           <input type="range" id="cushionOtherRng" min="0" max="400" step="10" value="" oninput="syncInput('cushionOtherRng','cushionOther'); recalc();" />
         </div>
@@ -553,7 +553,7 @@
         <div class="slider-block">
           <div class="slider-top">
             <label><strong>Extra Monthly Principal on Car Loan ($/mo)</strong></label>
-            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="extraJeepMo" value="" step="25" oninput="syncSlider('extraJeepMo','extraJeepRng'); recalc();" />
+            <input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="extraJeepMo" value="" step="25" oninput="syncSlider('extraJeepMo','extraJeepRng'); recalc();" />
           </div>
           <input type="range" id="extraJeepRng" min="0" max="1800" step="25" value="" oninput="syncInput('extraJeepRng','extraJeepMo'); recalc();" />
         </div>
@@ -563,11 +563,11 @@
           <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px;">Optional: Car Loan Payoff Estimator</div>
           <div class="row" style="padding:4px 0;">
             <label style="font-size:0.82rem;">Estimated Remaining Loan Balance ($)</label>
-            <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="jeepBalance" value="" step="250" oninput="recalc()" /></div>
+            <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="jeepBalance" value="" step="250" oninput="recalc()" /></div>
           </div>
           <div class="row" style="padding:4px 0;">
             <label style="font-size:0.82rem;">Estimated Auto Loan APR (%)</label>
-            <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="jeepApr" value="" step="0.25" oninput="recalc()" /></div>
+            <div class="input-wrap"><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="jeepApr" value="" step="0.25" oninput="recalc()" /></div>
           </div>
           <div class="payoff-stats">
             <div class="stat-box">
@@ -588,7 +588,7 @@
         <div class="slider-block" style="margin-top:10px;">
           <div class="slider-top">
             <label><strong>Monthly Transfer to High-Yield Savings ($/mo)</strong></label>
-            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="savingsTransferMo" value="" step="50" oninput="syncSlider('savingsTransferMo','savingsTransferRng'); recalc();" />
+            <input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="savingsTransferMo" value="" step="50" oninput="syncSlider('savingsTransferMo','savingsTransferRng'); recalc();" />
           </div>
           <input type="range" id="savingsTransferRng" min="0" max="2200" step="50" value="" oninput="syncInput('savingsTransferRng','savingsTransferMo'); recalc();" />
         </div>
@@ -612,9 +612,9 @@
             <tr><td>Water + Trash</td><td class="cal-amt" id="calWaterAmt">$0.00</td><td><select id="calWaterWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
             <tr><td>Internet & Streaming</td><td class="cal-amt" id="calInternetAmt">$0.00</td><td><select id="calInternetWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
             <tr><td>Cell Phones</td><td class="cal-amt" id="calPhonesAmt">$0.00</td><td><select id="calPhonesWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td><input type="text" id="calCustom1Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom1Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom1Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td><input type="text" id="calCustom2Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom2Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom2Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td><input type="text" id="calCustom3Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom3Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom3Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom1Name" placeholder="Other bill" /></td><td><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="calCustom1Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom1Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom2Name" placeholder="Other bill" /></td><td><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="calCustom2Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom2Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom3Name" placeholder="Other bill" /></td><td><input type="text" class="num" inputmode="decimal" pattern="[0-9.]*" id="calCustom3Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom3Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
           </tbody>
         </table>
         <div class="week-grid">
@@ -653,7 +653,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • Created by Speakeasy Support &amp; Fenrir • build 2026.09.27t</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • Created by Speakeasy Support &amp; Fenrir • build 2026.09.27u</div>
 
 <script>
 /* ---------- Tax database: seed data (v1) ----------
