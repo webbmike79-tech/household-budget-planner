@@ -2,6 +2,9 @@
 
 Notable changes, newest first. The build tag is shown in the app footer.
 
+## 2026.09.27t — 2026-09-27
+- The Home / Property Insurance field now takes the annual premium ($/yr) and auto-divides by 12 like the property-tax field does — typing the yearly amount no longer inflates the monthly budget. Note: any previously saved insurance value was stored under the old monthly field and won't carry over; just re-enter the annual premium.
+
 ## 2026.09.27s — 2026-09-27
 - The footer now credits the builders: "Created by Speakeasy Support & Fenrir".
 
