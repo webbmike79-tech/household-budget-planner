@@ -266,7 +266,7 @@
               <option value="city">City</option>
               <option value="county">County</option>
             </select>
-            <input type="text" inputmode="decimal" id="customLocRate" placeholder="Rate %" style="flex:1; min-width:70px;" />
+            <input type="text" inputmode="decimal" id="customLocRate" placeholder="Rate %" style="flex:1; min-width:70px;" oninput="this.removeAttribute('data-auto')" />
             <button type="button" id="customLocAdd" onclick="saveCustomLocality()">Add</button>
           </div>
           <div id="locSuggest" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;"></div>
@@ -292,6 +292,29 @@
             <option value="biweekly">Every 2 weeks</option>
             <option value="weekly">Weekly</option>
             <option value="hourly">Hourly</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>401(k) Contribution
+            <span class="hint">Pre-tax percent of gross</span>
+          </label>
+          <select id="k401Pct" onchange="applyTaxCalc()">
+            <option value="0" selected>0%</option>
+            <option value="1">1%</option>
+            <option value="2">2%</option>
+            <option value="3">3%</option>
+            <option value="4">4%</option>
+            <option value="5">5%</option>
+            <option value="6">6%</option>
+            <option value="7">7%</option>
+            <option value="8">8%</option>
+            <option value="9">9%</option>
+            <option value="10">10%</option>
+            <option value="11">11%</option>
+            <option value="12">12%</option>
+            <option value="13">13%</option>
+            <option value="14">14%</option>
+            <option value="15">15%</option>
           </select>
         </div>
         <div class="row hidden" id="hoursPerWeekRow">
@@ -334,11 +357,6 @@
           </label>
           <select id="incomePreset" onchange="applyPreset()">
             <option value="" selected>— Choose a preset (optional) —</option>
-            <option value="5425.00">$5,425.00/mo (Single / Dual-Earner W-4, No Benefits)</option>
-            <option value="5720.00">$5,720.00/mo (Married 1-Earner W-4, No Benefits)</option>
-            <option value="5167.13">$5,167.13/mo (Married w/ 6% 401k + $250/mo Health)</option>
-            <option value="4937.96">$4,937.96/mo (Single w/ 6% 401k + $250/mo Health)</option>
-            <option value="custom">Custom Monthly Net Pay</option>
           </select>
         </div>
         <div class="row">
@@ -635,7 +653,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.27p</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.27r</div>
 
 <script>
 /* ---------- Tax database: seed data (v1) ----------
@@ -1226,7 +1244,7 @@ var TaxDB = (function() {
 })();
   const FIELD_IDS = [
     'userState','filingStatus','payFreq','hoursPerWeek','grossAnnual','secondIncomeEnabled','grossAnnual2','payFreq2','housingStatus','housingPaymentMo',
-    'netIncome','incomePreset','homeValue','zipCode','propTaxAnnual','homeInsMo','homeMaintMo',
+    'netIncome','incomePreset','k401Pct','homeValue','zipCode','propTaxAnnual','homeInsMo','homeMaintMo',
     'electricMo','waterMo','internetMo','phonesMo',
     'carPaymentMo','autoInsSixMo','milesMo','gasPrice','oilCostPerService','tiresRegMo',
     'groceriesMo','diningMo','medicalBaseMo','personalMo',
@@ -1256,12 +1274,63 @@ var TaxDB = (function() {
   }
 
   function applyPreset() {
-    const p = document.getElementById('incomePreset').value;
-    if (p !== 'custom' && p !== '') {
-      document.getElementById('netIncome').value = p;
+    var sel = document.getElementById('incomePreset');
+    var opt = sel.options[sel.selectedIndex];
+    var amt = opt && opt.getAttribute('data-amt');
+    if (amt) {
+      document.getElementById('netIncome').value = amt;
       netManual = true;
       document.getElementById('netCalcHint').textContent = 'Using the preset \u2014 type to override, or use gross above to recalc';
       recalc();
+    }
+  }
+
+  /* ---------- Paycheck presets: computed live from YOUR gross pay ----------
+     The old presets were hardcoded for $80k/yr. These recompute from whatever
+     gross is entered (either pay frequency), the selected state, and the
+     selected city/county, so $10/hr gives $10/hr numbers. A chosen preset
+     stays live: editing gross re-prices it. */
+  var PRESETS = [
+    { key: 'p1', fs: 'single', label: 'Single' },
+    { key: 'p2', fs: 'mfj',    label: 'Married Filing Jointly' },
+  ];
+  function presetNetMonthly(fs) {
+    var g1 = toAnnual(val('grossAnnual'), document.getElementById('payFreq').value, val('hoursPerWeek'));
+    var secondOn = document.getElementById('secondIncomeEnabled').checked;
+    var g2 = secondOn ? toAnnual(val('grossAnnual2'), document.getElementById('payFreq2').value, 40) : 0;
+    if (!(g1 > 0 || g2 > 0)) return null;
+    var kRate = (parseFloat(document.getElementById('k401Pct').value) || 0) / 100;
+    var r = computeTakeHomeCore(g1, g2, fs, document.getElementById('userState').value,
+                                selectedLocality(), TAX, kRate);
+    return r ? r.netMonthly : null;
+  }
+  function refreshPresets() {
+    var sel = document.getElementById('incomePreset');
+    if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = '';
+    function mk(v, txt, m) {
+      var o = document.createElement('option');
+      o.value = v; o.textContent = txt;
+      if (m !== null && m !== undefined) o.setAttribute('data-amt', m.toFixed(2));
+      sel.appendChild(o);
+    }
+    mk('', '\u2014 Choose a preset (optional) \u2014');
+    PRESETS.forEach(function(p) {
+      var m = presetNetMonthly(p.fs);
+      mk(p.key, m === null ? p.label : ('$' + m.toFixed(2) + '/mo (' + p.label + ')'), m);
+    });
+    mk('custom', 'Custom Monthly Net Pay');
+    sel.value = cur; // restore; stale saved values fall back to ''
+    // Keep a chosen preset live: re-price it from the current gross.
+    if (cur && cur !== 'custom') {
+      var opt = sel.querySelector('option[value="' + cur + '"]');
+      var amt = opt && opt.getAttribute('data-amt');
+      if (amt) {
+        document.getElementById('netIncome').value = amt;
+        netManual = true;
+        document.getElementById('netCalcHint').textContent = 'Using the preset \u2014 type to override, or use gross above to recalc';
+      }
     }
   }
 
@@ -1412,23 +1481,31 @@ var TaxDB = (function() {
   }
   // Pure core: all tax math as a function of inputs + tax data (no DOM).
   // computeTakeHome() below is the thin DOM wrapper around this.
-  function computeTakeHomeCore(g1, g2, fs, st, loc, T) {
+  function computeTakeHomeCore(g1, g2, fs, st, loc, T, kRate) {
     if (!st || !fs || !(g1 > 0 || g2 > 0)) return null;
+    kRate = kRate || 0;
     var joint = (fs === 'mfj' || fs === 'qss') && g2 > 0;
-    var federal, stateTax, localTax;
+    function kOf(g) { return g * kRate; }          // 401(k): pre-tax for income tax, not FICA
+    function tgOf(g) { return Math.max(0, g - kOf(g)); }
+    var federal, stateTax, localTax, k401;
     if (joint) {
-      federal = fedTaxFor(g1 + g2, fs, T);
-      stateTax = stateTaxFor(g1 + g2, st, fs, T);
-      localTax = localTaxFor(g1 + g2, loc, fs, stateTax);
+      var tgj = tgOf(g1 + g2);
+      federal = fedTaxFor(tgj, fs, T);
+      stateTax = stateTaxFor(tgj, st, fs, T);
+      localTax = localTaxFor(tgj, loc, fs, stateTax);
+      k401 = kOf(g1 + g2);
     } else {
-      federal = fedTaxFor(g1, fs, T) + (g2 > 0 ? fedTaxFor(g2, fs, T) : 0);
-      var stx1 = stateTaxFor(g1, st, fs, T), stx2 = g2 > 0 ? stateTaxFor(g2, st, fs, T) : 0;
+      var t1 = tgOf(g1), t2 = g2 > 0 ? tgOf(g2) : 0;
+      federal = fedTaxFor(t1, fs, T) + (g2 > 0 ? fedTaxFor(t2, fs, T) : 0);
+      var stx1 = stateTaxFor(t1, st, fs, T), stx2 = g2 > 0 ? stateTaxFor(t2, st, fs, T) : 0;
       stateTax = stx1 + stx2;
-      localTax = localTaxFor(g1, loc, fs, stx1) + (g2 > 0 ? localTaxFor(g2, loc, fs, stx2) : 0);
+      localTax = localTaxFor(t1, loc, fs, stx1) + (g2 > 0 ? localTaxFor(t2, loc, fs, stx2) : 0);
+      k401 = kOf(g1) + (g2 > 0 ? kOf(g2) : 0);
     }
     var fica = ficaFor(g1, T) + ficaFor(g2, T);
     return { gross: g1 + g2, gross2: g2, federal: federal, fica: fica, stateTax: stateTax,
-             localTax: localTax, netMonthly: (g1 + g2 - federal - fica - stateTax - localTax) / 12,
+             localTax: localTax, k401: k401,
+             netMonthly: (g1 + g2 - federal - fica - stateTax - localTax - k401) / 12,
              state: st, joint: joint, localityName: loc ? (loc.name + ', ' + loc.state) : '' };
   }
   function computeTakeHome() {
@@ -1437,7 +1514,8 @@ var TaxDB = (function() {
     var g1 = toAnnual(val('grossAnnual'), document.getElementById('payFreq').value, val('hoursPerWeek'));
     var secondOn = document.getElementById('secondIncomeEnabled').checked;
     var g2 = secondOn ? toAnnual(val('grossAnnual2'), document.getElementById('payFreq2').value, 40) : 0;
-    return computeTakeHomeCore(g1, g2, fs, st, selectedLocality(), TAX);
+    var kRate = (parseFloat(document.getElementById('k401Pct').value) || 0) / 100;
+    return computeTakeHomeCore(g1, g2, fs, st, selectedLocality(), TAX, kRate);
   }
   /* ---------- City/county locality picker (reads the tax DB) ---------- */
   var pendingLocality = '';
@@ -1510,6 +1588,22 @@ var TaxDB = (function() {
     lbl.style.cssText = 'width:100%;font-size:12px;opacity:0.7;';
     lbl.textContent = 'In the 2026 tables \u2014 tap to use:';
     box.appendChild(lbl);
+    // Auto-fill the Rate box from the tables when the typed name matches a
+    // table entry, so the user never has to know the rate. A rate the user
+    // typed by hand is never overwritten (tracked with data-auto).
+    var rateEl = document.getElementById('customLocRate');
+    var kindEl = document.getElementById('customLocKind');
+    var exact = null, i;
+    for (i = 0; i < hits.length; i++) {
+      if (String(hits[i].name).toLowerCase() === q) { exact = hits[i]; break; }
+    }
+    var fill = exact || (hits.length === 1 ? hits[0] : null);
+    if (fill && fill.type === 'flat' && rateEl &&
+        (rateEl.value.trim() === '' || rateEl.getAttribute('data-auto') === '1')) {
+      rateEl.value = (fill.rate * 100).toFixed(2).replace(/\.?0+$/, '');
+      rateEl.setAttribute('data-auto', '1');
+      if (kindEl && (fill.kind === 'city' || fill.kind === 'county')) kindEl.value = fill.kind;
+    }
     hits.forEach(function(l) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -1531,6 +1625,21 @@ var TaxDB = (function() {
     var kind = document.getElementById('customLocKind').value;
     var rate = parseFloat(document.getElementById('customLocRate').value) || 0;
     if (!st || !name || !(rate > 0) || rate > 100) return;
+    // If the typed name exactly matches an entry already in the on-device
+    // database (2026 table or the user's own saved one), just select it
+    // instead of saving a duplicate.
+    var stList = ((TAX.localitiesByState || {})[st]) || [];
+    var qn = name.toLowerCase();
+    for (var mi = 0; mi < stList.length; mi++) {
+      if (String(stList[mi].name).toLowerCase() === qn) {
+        pendingLocality = String(stList[mi].id);
+        document.getElementById('customLocName').value = '';
+        document.getElementById('customLocRate').value = '';
+        refreshLocalityOptions();
+        applyTaxCalc();
+        return;
+      }
+    }
     var entry = { state: st, name: name, kind: kind, year: TAX_SEED.year,
                   type: 'flat', rate: rate / 100, custom: true };
     TaxDB.addLocality(entry).then(function(id) {
@@ -1567,17 +1676,21 @@ var TaxDB = (function() {
       netManual = false;
       var grossLbl = r.gross2 > 0 ? 'Combined ' + fmt(r.gross) + '/yr' : fmt(r.gross) + '/yr';
       hint.textContent = grossLbl + ' \u2022 Federal ' + fmt(r.federal/12) + '/mo \u2022 FICA ' + fmt(r.fica/12) + '/mo \u2022 ' + r.state + ' tax ' + fmt(r.stateTax/12) + '/mo'
-        + (r.localTax > 0 ? ' \u2022 Local (' + r.localityName + ') ' + fmt(r.localTax/12) + '/mo' : '');
+        + (r.localTax > 0 ? ' \u2022 Local (' + r.localityName + ') ' + fmt(r.localTax/12) + '/mo' : '')
+             + (r.k401 > 0 ? ' \u2022 401(k) ' + fmt(r.k401/12) + '/mo' : '');
       document.getElementById('taxNetMo').textContent = fmt(r.netMonthly) + '/mo';
       document.getElementById('netCalcHint').textContent = r.gross2 > 0 ? 'Auto-filled from combined gross \u2014 type to override' : 'Auto-filled from your gross pay \u2014 type to override';
     } else {
       hint.textContent = 'Enter gross pay to estimate take-home';
       document.getElementById('taxNetMo').textContent = '\u2014';
     }
+    refreshPresets();
     recalc();
   }
   function markNetManual() {
     netManual = true;
+    var ps = document.getElementById('incomePreset');
+    if (ps) ps.value = '';
     var r = computeTakeHome();
     document.getElementById('netCalcHint').textContent = r
       ? 'Using your manual entry (calculated: ' + fmt(r.netMonthly) + '/mo)'
