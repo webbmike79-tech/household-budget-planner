@@ -404,10 +404,10 @@
           <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="propTaxAnnual" value="" step="10" oninput="taxManual=true;recalc()" /></div>
         </div>
         <div class="row">
-          <label>Home / Property Insurance Reserve ($/mo)
-            <span class="hint">$333/mo = $3,996/yr reserve</span>
+          <label>Home / Property Insurance ($/yr)
+            <span class="hint">Auto-divides by 12 mos: <strong id="homeInsMoText">$0.00/mo</strong></span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeInsMo" value="" step="5" oninput="recalc()" /></div>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeInsAnnual" value="" step="50" oninput="recalc()" /></div>
         </div>
         <div class="row">
           <label>Home & Land Upkeep / Repairs ($/mo)
@@ -653,7 +653,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • Created by Speakeasy Support &amp; Fenrir • build 2026.09.27s</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • Created by Speakeasy Support &amp; Fenrir • build 2026.09.27t</div>
 
 <script>
 /* ---------- Tax database: seed data (v1) ----------
@@ -1244,7 +1244,7 @@ var TaxDB = (function() {
 })();
   const FIELD_IDS = [
     'userState','filingStatus','payFreq','hoursPerWeek','grossAnnual','secondIncomeEnabled','grossAnnual2','payFreq2','housingStatus','housingPaymentMo',
-    'netIncome','incomePreset','k401Pct','homeValue','zipCode','propTaxAnnual','homeInsMo','homeMaintMo',
+    'netIncome','incomePreset','k401Pct','homeValue','zipCode','propTaxAnnual','homeInsAnnual','homeMaintMo',
     'electricMo','waterMo','internetMo','phonesMo',
     'carPaymentMo','autoInsSixMo','milesMo','gasPrice','oilCostPerService','tiresRegMo',
     'groceriesMo','diningMo','medicalBaseMo','personalMo',
@@ -1705,7 +1705,8 @@ var TaxDB = (function() {
     const housingStatus = document.getElementById('housingStatus').value;
     const housingPaymentMo = (housingStatus !== 'own') ? val('housingPaymentMo') : 0;
     const propTaxMo = val('propTaxAnnual') / 12;
-    const homeInsMo = val('homeInsMo');
+    const homeInsMo = val('homeInsAnnual') / 12;
+    document.getElementById('homeInsMoText').textContent = fmt(homeInsMo) + '/mo';
     const homeMaintMo = val('homeMaintMo');
     const housingTotal = housingPaymentMo + propTaxMo + homeInsMo + homeMaintMo;
     document.getElementById('propTaxMoText').textContent = fmt(propTaxMo) + '/mo';
@@ -1999,7 +2000,7 @@ var TaxDB = (function() {
       ['Income', 'Monthly Net Take-Home Pay', val('netIncome').toFixed(2), (val('netIncome')*12).toFixed(2)],
       ['Home & Housing', 'Mortgage / Rent Payment', ((document.getElementById('housingStatus').value !== 'own') ? val('housingPaymentMo') : 0).toFixed(2), (((document.getElementById('housingStatus').value !== 'own') ? val('housingPaymentMo') : 0)*12).toFixed(2)],
       ['Home & Housing', 'Property Tax', (val('propTaxAnnual')/12).toFixed(2), val('propTaxAnnual').toFixed(2)],
-      ['Home & Housing', 'Home / Property Insurance Reserve', val('homeInsMo').toFixed(2), (val('homeInsMo')*12).toFixed(2)],
+      ['Home & Housing', 'Home / Property Insurance', (val('homeInsAnnual')/12).toFixed(2), val('homeInsAnnual').toFixed(2)],
       ['Home & Housing', 'Home & Land Upkeep / Repairs', val('homeMaintMo').toFixed(2), (val('homeMaintMo')*12).toFixed(2)],
       ['Utilities', 'Electricity', val('electricMo').toFixed(2), (val('electricMo')*12).toFixed(2)],
       ['Utilities', 'Water + Trash', val('waterMo').toFixed(2), (val('waterMo')*12).toFixed(2)],
