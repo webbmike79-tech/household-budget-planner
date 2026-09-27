@@ -271,7 +271,7 @@
         </div>
         <div class="row">
           <label>Pay Frequency</label>
-          <select id="payFreq" onchange="updatePayLabels()">
+          <select id="payFreq" onchange="onPayFreqChange()">
             <option value="annual" selected>Annual (salary)</option>
             <option value="monthly">Monthly</option>
             <option value="semimonthly">Twice a month</option>
@@ -301,7 +301,7 @@
         </div>
         <div class="row hidden" id="secondFreqRow">
           <label>Second Pay Frequency</label>
-          <select id="payFreq2" onchange="applyTaxCalc()">
+          <select id="payFreq2" onchange="onPayFreq2Change()">
             <option value="annual" selected>Annual (salary)</option>
             <option value="monthly">Monthly</option>
             <option value="semimonthly">Twice a month</option>
@@ -621,7 +621,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26j</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26k</div>
 
 <script>
 const TAX2026 = {
@@ -877,6 +877,38 @@ const TAX2026 = {
     if (freq === 'weekly') return amt * 52;
     if (freq === 'hourly') return amt * (hrsPerWk || 40) * 52;
     return amt;
+  }
+  function freqFactor(freq, hrs) {
+    if (freq === 'monthly') return 12;
+    if (freq === 'semimonthly') return 24;
+    if (freq === 'biweekly') return 26;
+    if (freq === 'weekly') return 52;
+    if (freq === 'hourly') return (hrs || 40) * 52;
+    return 1;
+  }
+  // When a pay-frequency dropdown changes, convert the entered amount so the
+  // annualized pay stays the same (e.g. $60,000/yr -> ~$28.85/hr) instead of
+  // reinterpreting the same number in the new unit.
+  function convertPayOnFreqChange(inputId, freqId, hrsId) {
+    var input = document.getElementById(inputId);
+    var freqEl = document.getElementById(freqId);
+    var newFreq = freqEl.value;
+    var oldFreq = freqEl.getAttribute('data-prev') || newFreq;
+    var v = parseFloat(input.value);
+    if (v > 0 && oldFreq !== newFreq) {
+      var hrs = hrsId ? val(hrsId) : 40;
+      var annual = v * freqFactor(oldFreq, hrs);
+      input.value = Math.round(annual / freqFactor(newFreq, hrs) * 100) / 100;
+    }
+    freqEl.setAttribute('data-prev', newFreq);
+  }
+  function onPayFreqChange() {
+    convertPayOnFreqChange('grossAnnual', 'payFreq', 'hoursPerWeek');
+    updatePayLabels();
+  }
+  function onPayFreq2Change() {
+    convertPayOnFreqChange('grossAnnual2', 'payFreq2', null);
+    applyTaxCalc();
   }
   function updatePayLabels() {
     var f = document.getElementById('payFreq').value;
@@ -1154,6 +1186,10 @@ const TAX2026 = {
     syncSlider('cushionOther','cushionOtherRng');
     syncSlider('extraJeepMo','extraJeepRng');
     syncSlider('savingsTransferMo','savingsTransferRng');
+    ['payFreq', 'payFreq2'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.setAttribute('data-prev', el.value);
+    });
   }
   let lockModalMode = 'set';
   function openLockModal(mode) {
