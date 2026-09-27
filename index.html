@@ -111,16 +111,6 @@
     .modal-err { color: #ff9d9d; font-size: 0.85rem; min-height: 1.2em; margin-top: 8px; }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
 </style>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#141a2e" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <script>
-  window.addEventListener('load', function () {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
-    }
-  });
-  </script>
 </head>
 <body>
 <div class="container">
@@ -202,9 +192,9 @@
         </div>
         <div class="row">
           <label>Your State
-            <span class="hint">State tax brackets applied to full gross (local taxes not included)</span>
+            <span class="hint">State tax brackets applied to full gross</span>
           </label>
-          <select id="userState" onchange="applyTaxCalc()">
+          <select id="userState" onchange="onStateChange()">
             <option value="AL">Alabama</option>
             <option value="AK">Alaska</option>
             <option value="AZ">Arizona</option>
@@ -257,6 +247,28 @@
             <option value="WI">Wisconsin</option>
             <option value="WY">Wyoming</option>
           </select>
+        </div>
+        <div class="row">
+          <label>City / County Tax
+            <span class="hint">Optional — only if your city or county has its own income tax</span>
+          </label>
+          <select id="userLocality" onchange="onLocalityChange()">
+            <option value="">None</option>
+          </select>
+        </div>
+        <div class="row hidden" id="customLocalityRow">
+          <label>Add your city / county
+            <span class="hint">Saved in the on-device tax database</span>
+          </label>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <input type="text" id="customLocName" placeholder="City or county name" style="flex:2; min-width:120px;" />
+            <select id="customLocKind" style="flex:1; min-width:90px;">
+              <option value="city">City</option>
+              <option value="county">County</option>
+            </select>
+            <input type="text" inputmode="decimal" id="customLocRate" placeholder="Rate %" style="flex:1; min-width:70px;" />
+            <button type="button" id="customLocAdd" onclick="saveCustomLocality()">Add</button>
+          </div>
         </div>
         <div class="row">
           <label>Filing Status</label>
@@ -575,14 +587,14 @@
         <table class="cal-table">
           <thead><tr><th>Bill</th><th>Amount</th><th>Week due</th></tr></thead>
           <tbody>
-            <tr><td>Car Payment</td><td class="cal-amt" id="calCarAmt">$0.00</td><td><select id="calCarWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td>Electricity</td><td class="cal-amt" id="calElectricAmt">$0.00</td><td><select id="calElectricWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td>Water + Trash</td><td class="cal-amt" id="calWaterAmt">$0.00</td><td><select id="calWaterWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td>Internet & Streaming</td><td class="cal-amt" id="calInternetAmt">$0.00</td><td><select id="calInternetWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td>Cell Phones</td><td class="cal-amt" id="calPhonesAmt">$0.00</td><td><select id="calPhonesWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td><input type="text" id="calCustom1Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom1Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom1Wk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td><input type="text" id="calCustom2Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom2Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom2Wk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
-            <tr><td><input type="text" id="calCustom3Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom3Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom3Wk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Car Payment</td><td class="cal-amt" id="calCarAmt">$0.00</td><td><select id="calCarWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Electricity</td><td class="cal-amt" id="calElectricAmt">$0.00</td><td><select id="calElectricWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Water + Trash</td><td class="cal-amt" id="calWaterAmt">$0.00</td><td><select id="calWaterWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Internet & Streaming</td><td class="cal-amt" id="calInternetAmt">$0.00</td><td><select id="calInternetWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Cell Phones</td><td class="cal-amt" id="calPhonesAmt">$0.00</td><td><select id="calPhonesWk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom1Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom1Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom1Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom2Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom2Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom2Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom3Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom3Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom3Wk" onchange="recalc()"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
           </tbody>
         </table>
         <div class="week-grid">
@@ -621,10 +633,19 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26m</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.27n</div>
 
 <script>
-const TAX2026 = {
+/* ---------- Tax database: seed data (v1) ----------
+   Federal + state tables ship as seed data. On first run they are copied into
+   IndexedDB ("budgetPlannerTaxDB"); the app then reads from the DB, so future
+   tax years can ship as data updates instead of code changes. If IndexedDB is
+   unavailable (e.g. private browsing), the app silently falls back to this seed. */
+const TAX_SEED = {
+  version: 1,
+  year: 2026,
+  data: {
+  /* (was TAX2026) */
   federal: {
     single_std: 16100, mfj_std: 32200, mfs_std: 16100, hoh_std: 24150, qss_std: 32200,
     single: [[12400,0.10],[50400,0.12],[105700,0.22],[201775,0.24],[256225,0.32],[640600,0.35],[null,0.37]],
@@ -789,8 +810,201 @@ const TAX2026 = {
       single: [[10000,0.04],[40000,0.06],[60000,0.065],[250000,0.085],[500000,0.0925],[1000000,0.0975],[null,0.1075]],
       mfj: [[10000,0.04],[40000,0.06],[60000,0.065],[250000,0.085],[500000,0.0925],[1000000,0.0975],[null,0.1075]],
       mfs: "same as single", hoh: "same as single", qss: "same as mfj" }
-  }
+  },
+  }, // end data (federal + state tables)
+  /* Seed localities: well-known city/county income taxes, verified for 2026.
+     Each: { state, name, kind: 'city'|'county', year, type: 'flat'|'graduated',
+     rate (flat, as decimal) or brackets (graduated, [[top, rate], ...]) }.
+     Users can add their own city/county in the app; those are stored in the DB. */
+  localities: [
+    { state:'NY', name:'New York City', kind:'city', year:2026, type:'graduated', schedules:{
+      single:[[12000,0.03078],[25000,0.03762],[50000,0.03819],[null,0.03876]],
+      mfs:'same as single',
+      mfj:[[21600,0.03078],[45000,0.03762],[90000,0.03819],[null,0.03876]],
+      qss:'same as mfj',
+      hoh:[[14400,0.03078],[30000,0.03762],[60000,0.03819],[null,0.03876]] } },
+    { state:'NY', name:'Yonkers (resident)', kind:'city', year:2026, type:'surcharge', rate:0.1675 },
+    { state:'MD', name:'Allegany', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Baltimore City', kind:'city', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Baltimore County', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Calvert', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Caroline', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Carroll', kind:'county', year:2026, type:'flat', rate:0.0303 },
+    { state:'MD', name:'Cecil', kind:'county', year:2026, type:'flat', rate:0.0274 },
+    { state:'MD', name:'Charles', kind:'county', year:2026, type:'flat', rate:0.0303 },
+    { state:'MD', name:'Dorchester', kind:'county', year:2026, type:'flat', rate:0.033 },
+    { state:'MD', name:'Garrett', kind:'county', year:2026, type:'flat', rate:0.0265 },
+    { state:'MD', name:'Harford', kind:'county', year:2026, type:'flat', rate:0.0306 },
+    { state:'MD', name:'Howard', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Kent', kind:'county', year:2026, type:'flat', rate:0.033 },
+    { state:'MD', name:'Montgomery', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:"Prince George's", kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:"Queen Anne's", kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:"St. Mary's", kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Somerset', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Talbot', kind:'county', year:2026, type:'flat', rate:0.024 },
+    { state:'MD', name:'Washington', kind:'county', year:2026, type:'flat', rate:0.0295 },
+    { state:'MD', name:'Wicomico', kind:'county', year:2026, type:'flat', rate:0.032 },
+    { state:'MD', name:'Worcester', kind:'county', year:2026, type:'flat', rate:0.0225 },
+    { state:'MD', name:'Anne Arundel', kind:'county', year:2026, type:'graduated', schedules:{
+      single:[[50000,0.0270],[400000,0.0294],[null,0.0320]], mfs:'same as single',
+      mfj:[[75000,0.0270],[480000,0.0294],[null,0.0320]], hoh:'same as mfj', qss:'same as mfj' } },
+    { state:'MD', name:'Frederick', kind:'county', year:2026, type:'graduated', schedules:{
+      single:[[25000,0.0225],[50000,0.0275],[150000,0.0296],[null,0.0320]], mfs:'same as single',
+      mfj:[[25000,0.0225],[100000,0.0275],[250000,0.0296],[null,0.0320]], hoh:'same as mfj', qss:'same as mfj' } },
+    { state:'OH', name:'Columbus', kind:'city', year:2026, type:'flat', rate:0.025 },
+    { state:'OH', name:'Cleveland', kind:'city', year:2026, type:'flat', rate:0.025 },
+    { state:'OH', name:'Cincinnati', kind:'city', year:2026, type:'flat', rate:0.018 },
+    { state:'OH', name:'Toledo', kind:'city', year:2026, type:'flat', rate:0.0225 },
+    { state:'OH', name:'Akron', kind:'city', year:2026, type:'flat', rate:0.025 },
+    { state:'OH', name:'Dayton', kind:'city', year:2026, type:'flat', rate:0.025 },
+    { state:'PA', name:'Philadelphia (resident)', kind:'city', year:2026, type:'flat', rate:0.037375 },
+    { state:'PA', name:'Philadelphia (nonresident)', kind:'city', year:2026, type:'flat', rate:0.034275 },
+    { state:'PA', name:'Pittsburgh', kind:'city', year:2026, type:'flat', rate:0.03 },
+    { state:'MO', name:'St. Louis', kind:'city', year:2026, type:'flat', rate:0.01 },
+    { state:'MO', name:'Kansas City', kind:'city', year:2026, type:'flat', rate:0.01 },
+    { state:'KY', name:'Louisville Metro (resident)', kind:'city/county', year:2026, type:'flat', rate:0.022 },
+    { state:'KY', name:'Louisville Metro (nonresident)', kind:'city/county', year:2026, type:'flat', rate:0.0145 },
+    { state:'KY', name:'Lexington-Fayette', kind:'city/county', year:2026, type:'flat', rate:0.0225 },
+    { state:'MI', name:'Detroit (resident)', kind:'city', year:2026, type:'flat', rate:0.024 },
+    { state:'MI', name:'Detroit (nonresident)', kind:'city', year:2026, type:'flat', rate:0.012 },
+    { state:'MI', name:'Grand Rapids (resident)', kind:'city', year:2026, type:'flat', rate:0.015 },
+    { state:'MI', name:'Grand Rapids (nonresident)', kind:'city', year:2026, type:'flat', rate:0.0075 },
+    { state:'IN', name:'Marion County', kind:'county', year:2026, type:'flat', rate:0.0202 },
+    { state:'IN', name:'Lake County', kind:'county', year:2026, type:'flat', rate:0.015 },
+    { state:'IN', name:'Allen County', kind:'county', year:2026, type:'flat', rate:0.0159 }
+  ]
 };
+// Live tax data. Starts as the seed; replaced by the IndexedDB contents once loaded.
+var TAX = TAX_SEED.data;
+TAX.localitiesByState = {};
+
+/* ---------- TaxDB: IndexedDB wrapper ---------- */
+var TaxDB = (function() {
+  var DB_NAME = 'budgetPlannerTaxDB', DB_VER = 1, db = null;
+  function req(rq) {
+    return new Promise(function(res, rej) {
+      rq.onsuccess = function() { res(rq.result); };
+      rq.onerror = function() { rej(rq.error || new Error('idb-request')); };
+    });
+  }
+  function openDB() {
+    return new Promise(function(res, rej) {
+      if (!('indexedDB' in window)) { rej(new Error('no-indexeddb')); return; }
+      var rq;
+      try { rq = indexedDB.open(DB_NAME, DB_VER); }
+      catch (e) { rej(e); return; }
+      rq.onupgradeneeded = function(e) {
+        var d = e.target.result;
+        if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv', { keyPath: 'k' });
+        if (!d.objectStoreNames.contains('federal')) d.createObjectStore('federal', { keyPath: 'year' });
+        if (!d.objectStoreNames.contains('states')) d.createObjectStore('states', { keyPath: 'state' });
+        if (!d.objectStoreNames.contains('localities')) {
+          var ls = d.createObjectStore('localities', { keyPath: 'id', autoIncrement: true });
+          ls.createIndex('byState', 'state', { unique: false });
+        }
+      };
+      rq.onsuccess = function(e) { res(e.target.result); };
+      rq.onerror = function() { rej(rq.error || new Error('idb-open')); };
+      rq.onblocked = function() { rej(new Error('idb-blocked')); };
+    });
+  }
+  function groupLocalities(rows) {
+    var byState = {};
+    rows.forEach(function(r) { (byState[r.state] = byState[r.state] || []).push(r); });
+    Object.keys(byState).forEach(function(st) {
+      byState[st].sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+    });
+    return byState;
+  }
+  function seedData() {
+    var t = db.transaction(['kv', 'federal', 'states', 'localities'], 'readwrite');
+    var kv = t.objectStore('kv'), fed = t.objectStore('federal'),
+        sts = t.objectStore('states'), loc = t.objectStore('localities');
+    fed.put(Object.assign({ year: TAX_SEED.year, ss_wage_base: TAX_SEED.data.ss_wage_base }, TAX_SEED.data.federal));
+    Object.keys(TAX_SEED.data.states).forEach(function(code) {
+      sts.put(Object.assign({ state: code }, TAX_SEED.data.states[code]));
+    });
+    // Seed localities carry stable string ids, so reseeding upserts them and
+    // never touches user-added (numeric id) entries.
+    (TAX_SEED.localities || []).forEach(function(r, i) {
+      var row = Object.assign({}, r);
+      row.id = 'seed-' + i;
+      loc.put(row);
+    });
+    kv.put({ k: 'seedVersion', v: TAX_SEED.version });
+    return new Promise(function(res, rej) {
+      t.oncomplete = function() { res(); };
+      t.onerror = function() { rej(t.error || new Error('seed-tx')); };
+      t.onabort = function() { rej(t.error || new Error('seed-abort')); };
+    });
+  }
+  function loadAll() {
+    var t = db.transaction(['federal', 'states', 'localities'], 'readonly');
+    return Promise.all([
+      req(t.objectStore('federal').get(TAX_SEED.year)),
+      req(t.objectStore('states').getAll()),
+      req(t.objectStore('localities').getAll())
+    ]).then(function(parts) {
+      var fedRow = parts[0], stateRows = parts[1] || [], locRows = parts[2] || [];
+      if (!fedRow || !stateRows.length) throw new Error('empty-db');
+      var states = {};
+      stateRows.forEach(function(r) { var code = r.state; delete r.state; states[code] = r; });
+      var fed = { year: fedRow.year };
+      Object.keys(fedRow).forEach(function(k) { if (k !== 'year') fed[k] = fedRow[k]; });
+      return { federal: fed, ss_wage_base: fedRow.ss_wage_base, states: states,
+               localitiesByState: groupLocalities(locRows) };
+    });
+  }
+  function fallbackTax() {
+    var data = JSON.parse(JSON.stringify(TAX_SEED.data));
+    var rows = (TAX_SEED.localities || []).map(function(r, i) {
+      var c = Object.assign({}, r); c.id = 'seed-' + i; return c;
+    });
+    return { federal: data.federal, ss_wage_base: data.ss_wage_base, states: data.states,
+             localitiesByState: groupLocalities(rows) };
+  }
+  return {
+    init: function() {
+      // Always resolves. On any failure TAX keeps the in-file seed.
+      return openDB().then(function(d) {
+        db = d;
+        return req(db.transaction('kv', 'readonly').objectStore('kv').get('seedVersion'))
+          .catch(function() { return undefined; })
+          .then(function(row) {
+            var v = row && row.v;
+            var need = (!v || v < TAX_SEED.version) ? seedData() : Promise.resolve();
+            return need.then(loadAll);
+          });
+      }).then(function(tax) {
+        TAX = tax;
+        return TAX;
+      }).catch(function() {
+        TAX = fallbackTax();
+        return TAX;
+      });
+    },
+    addLocality: function(entry) {
+      // Resolves with the new record id. Falls back to seed-id when no DB.
+      if (!db) {
+        var rows = [];
+        Object.keys(TAX.localitiesByState).forEach(function(st) {
+          TAX.localitiesByState[st].forEach(function(r) { rows.push(r); });
+        });
+        entry.id = 'custom-' + Date.now();
+        return Promise.resolve(entry.id);
+      }
+      var t = db.transaction('localities', 'readwrite');
+      var addRq = t.objectStore('localities').add(entry);
+      return req(addRq).then(function(id) {
+        return new Promise(function(res, rej) {
+          t.oncomplete = function() { res(id); };
+          t.onerror = function() { rej(t.error); };
+        });
+      });
+    }
+  };
+})();
   const FIELD_IDS = [
     'userState','filingStatus','payFreq','hoursPerWeek','grossAnnual','secondIncomeEnabled','grossAnnual2','payFreq2','housingStatus','housingPaymentMo',
     'netIncome','incomePreset','homeValue','zipCode','propTaxAnnual','homeInsMo','homeMaintMo',
@@ -802,7 +1016,8 @@ const TAX2026 = {
     'calCarWk','calElectricWk','calWaterWk','calInternetWk','calPhonesWk',
     'calCustom1Name','calCustom1Amt','calCustom1Wk',
     'calCustom2Name','calCustom2Amt','calCustom2Wk',
-    'calCustom3Name','calCustom3Amt','calCustom3Wk'
+    'calCustom3Name','calCustom3Amt','calCustom3Wk',
+    'userLocality'
   ];
 
   function fmt(n) {
@@ -943,19 +1158,59 @@ const TAX2026 = {
     document.getElementById('hoursPerWeekRow').classList.toggle('hidden', f !== 'hourly');
     applyTaxCalc();
   }
-  function ficaFor(gross) {
-    return Math.min(gross, TAX2026.ss_wage_base) * 0.062 + gross * 0.0145;
+  function ficaFor(gross, T) {
+    return Math.min(gross, T.ss_wage_base) * 0.062 + gross * 0.0145;
   }
-  function fedTaxFor(gross, fs) {
-    var fed = TAX2026.federal;
+  function fedTaxFor(gross, fs, T) {
+    var fed = T.federal;
     var stdKey = {single:'single_std', mfj:'mfj_std', mfs:'mfs_std', hoh:'hoh_std', qss:'qss_std'}[fs];
     return bracketTax(Math.max(0, gross - (fed[stdKey] || 0)), resolveSchedule(fed, fs));
   }
-  function stateTaxFor(gross, st, fs) {
-    var se = TAX2026.states[st];
+  function stateTaxFor(gross, st, fs, T) {
+    var se = T.states[st];
+    if (!se) return 0;
     if (se.type === 'flat') return gross * se.rate;
     if (se.type === 'graduated') return bracketTax(gross, resolveSchedule(se, fs));
     return 0;
+  }
+  function localTaxFor(gross, loc, fs, stateTax) {
+    if (!loc) return 0;
+    // 'surcharge' = a percentage of the state tax bill (e.g. Yonkers, NY)
+    if (loc.type === 'surcharge') return (stateTax || 0) * (loc.rate || 0);
+    if (loc.type === 'graduated' && loc.schedules) return bracketTax(gross, resolveSchedule(loc.schedules, fs));
+    if (loc.type === 'graduated' && loc.brackets) return bracketTax(gross, loc.brackets);
+    return gross * (loc.rate || 0);
+  }
+  function selectedLocality() {
+    var sel = document.getElementById('userLocality');
+    if (!sel || !sel.value || sel.value === '__custom') return null;
+    var st = document.getElementById('userState').value;
+    var list = ((TAX.localitiesByState || {})[st]) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i].id) === String(sel.value)) return list[i];
+    }
+    return null;
+  }
+  // Pure core: all tax math as a function of inputs + tax data (no DOM).
+  // computeTakeHome() below is the thin DOM wrapper around this.
+  function computeTakeHomeCore(g1, g2, fs, st, loc, T) {
+    if (!st || !fs || !(g1 > 0 || g2 > 0)) return null;
+    var joint = (fs === 'mfj' || fs === 'qss') && g2 > 0;
+    var federal, stateTax, localTax;
+    if (joint) {
+      federal = fedTaxFor(g1 + g2, fs, T);
+      stateTax = stateTaxFor(g1 + g2, st, fs, T);
+      localTax = localTaxFor(g1 + g2, loc, fs, stateTax);
+    } else {
+      federal = fedTaxFor(g1, fs, T) + (g2 > 0 ? fedTaxFor(g2, fs, T) : 0);
+      var stx1 = stateTaxFor(g1, st, fs, T), stx2 = g2 > 0 ? stateTaxFor(g2, st, fs, T) : 0;
+      stateTax = stx1 + stx2;
+      localTax = localTaxFor(g1, loc, fs, stx1) + (g2 > 0 ? localTaxFor(g2, loc, fs, stx2) : 0);
+    }
+    var fica = ficaFor(g1, T) + ficaFor(g2, T);
+    return { gross: g1 + g2, gross2: g2, federal: federal, fica: fica, stateTax: stateTax,
+             localTax: localTax, netMonthly: (g1 + g2 - federal - fica - stateTax - localTax) / 12,
+             state: st, joint: joint, localityName: loc ? (loc.name + ', ' + loc.state) : '' };
   }
   function computeTakeHome() {
     var st = document.getElementById('userState').value;
@@ -963,19 +1218,72 @@ const TAX2026 = {
     var g1 = toAnnual(val('grossAnnual'), document.getElementById('payFreq').value, val('hoursPerWeek'));
     var secondOn = document.getElementById('secondIncomeEnabled').checked;
     var g2 = secondOn ? toAnnual(val('grossAnnual2'), document.getElementById('payFreq2').value, 40) : 0;
-    if (!st || !fs || !(g1 > 0 || g2 > 0)) return null;
-    var joint = (fs === 'mfj' || fs === 'qss') && g2 > 0;
-    var federal, stateTax;
-    if (joint) {
-      federal = fedTaxFor(g1 + g2, fs);
-      stateTax = stateTaxFor(g1 + g2, st, fs);
-    } else {
-      federal = fedTaxFor(g1, fs) + (g2 > 0 ? fedTaxFor(g2, fs) : 0);
-      stateTax = stateTaxFor(g1, st, fs) + (g2 > 0 ? stateTaxFor(g2, st, fs) : 0);
+    return computeTakeHomeCore(g1, g2, fs, st, selectedLocality(), TAX);
+  }
+  /* ---------- City/county locality picker (reads the tax DB) ---------- */
+  var pendingLocality = '';
+  function locLabel(loc) {
+    var pct = loc.type === 'graduated' ? 'graduated'
+      : loc.type === 'surcharge' ? ((loc.rate * 100).toFixed(2).replace(/\.?0+$/, '') + '% of state tax')
+      : ((loc.rate * 100).toFixed(2).replace(/\.?0+$/, '') + '%');
+    return loc.name + ' (' + loc.kind + ') \u2014 ' + pct;
+  }
+  function refreshLocalityOptions() {
+    var st = document.getElementById('userState').value;
+    var sel = document.getElementById('userLocality');
+    if (!sel) return;
+    var prev = pendingLocality || sel.value;
+    var list = ((TAX.localitiesByState || {})[st]) || [];
+    sel.innerHTML = '';
+    var none = document.createElement('option');
+    none.value = ''; none.textContent = 'None';
+    sel.appendChild(none);
+    list.forEach(function(loc) {
+      var o = document.createElement('option');
+      o.value = String(loc.id);
+      o.textContent = locLabel(loc);
+      sel.appendChild(o);
+    });
+    var custom = document.createElement('option');
+    custom.value = '__custom'; custom.textContent = 'Add your own\u2026';
+    sel.appendChild(custom);
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === String(prev)) { sel.selectedIndex = i; found = true; break; }
     }
-    var fica = ficaFor(g1) + ficaFor(g2);
-    return { gross: g1 + g2, gross2: g2, federal: federal, fica: fica, stateTax: stateTax,
-             netMonthly: (g1 + g2 - federal - fica - stateTax) / 12, state: st, joint: joint };
+    if (!found) sel.selectedIndex = 0;
+    pendingLocality = '';
+    document.getElementById('customLocalityRow').classList.toggle('hidden', sel.value !== '__custom');
+  }
+  function onStateChange() {
+    pendingLocality = '';
+    refreshLocalityOptions();
+    applyTaxCalc();
+  }
+  function onLocalityChange() {
+    var sel = document.getElementById('userLocality');
+    document.getElementById('customLocalityRow').classList.toggle('hidden', sel.value !== '__custom');
+    if (sel.value !== '__custom') applyTaxCalc();  // recalc() persists the selection
+  }
+  function saveCustomLocality() {
+    var st = document.getElementById('userState').value;
+    var name = (document.getElementById('customLocName').value || '').trim();
+    var kind = document.getElementById('customLocKind').value;
+    var rate = parseFloat(document.getElementById('customLocRate').value) || 0;
+    if (!st || !name || !(rate > 0) || rate > 100) return;
+    var entry = { state: st, name: name, kind: kind, year: TAX_SEED.year,
+                  type: 'flat', rate: rate / 100, custom: true };
+    TaxDB.addLocality(entry).then(function(id) {
+      entry.id = id;
+      var bucket = (TAX.localitiesByState[st] = TAX.localitiesByState[st] || []);
+      bucket.push(entry);
+      bucket.sort(function(a, b) { return String(a.name).localeCompare(String(b.name)); });
+      document.getElementById('customLocName').value = '';
+      document.getElementById('customLocRate').value = '';
+      pendingLocality = String(id);
+      refreshLocalityOptions();
+      applyTaxCalc();
+    });
   }
   function toggleHousing() {
     var hs = document.getElementById('housingStatus').value;
@@ -998,7 +1306,8 @@ const TAX2026 = {
       document.getElementById('netIncome').value = r.netMonthly.toFixed(2);
       netManual = false;
       var grossLbl = r.gross2 > 0 ? 'Combined ' + fmt(r.gross) + '/yr' : fmt(r.gross) + '/yr';
-      hint.textContent = grossLbl + ' \u2022 Federal ' + fmt(r.federal/12) + '/mo \u2022 FICA ' + fmt(r.fica/12) + '/mo \u2022 ' + r.state + ' tax ' + fmt(r.stateTax/12) + '/mo';
+      hint.textContent = grossLbl + ' \u2022 Federal ' + fmt(r.federal/12) + '/mo \u2022 FICA ' + fmt(r.fica/12) + '/mo \u2022 ' + r.state + ' tax ' + fmt(r.stateTax/12) + '/mo'
+        + (r.localTax > 0 ? ' \u2022 Local (' + r.localityName + ') ' + fmt(r.localTax/12) + '/mo' : '');
       document.getElementById('taxNetMo').textContent = fmt(r.netMonthly) + '/mo';
       document.getElementById('netCalcHint').textContent = r.gross2 > 0 ? 'Auto-filled from combined gross \u2014 type to override' : 'Auto-filled from your gross pay \u2014 type to override';
     } else {
@@ -1080,7 +1389,8 @@ const TAX2026 = {
     document.getElementById('kpiIncome').textContent = fmt(netIncome);
     const _th = computeTakeHome();
     document.getElementById('kpiIncomeSub').textContent = _th
-      ? (_th.state + ' \u2022 ' + fmt(_th.stateTax/12) + '/mo state tax')
+      ? (_th.state + ' \u2022 ' + fmt(_th.stateTax/12) + '/mo state tax'
+         + (_th.localTax > 0 ? ' \u2022 ' + fmt(_th.localTax/12) + '/mo local' : ''))
       : (netIncome > 0 ? 'Manual take-home entry' : 'Pick a state & filing status, or type take-home');
     document.getElementById('badgeIncome').textContent = fmt(netIncome) + '/mo';
     document.getElementById('kpiBaseExp').textContent = fmt(baseExpenses);
@@ -1215,6 +1525,9 @@ const TAX2026 = {
       if (el) el.setAttribute('data-prev', el.value);
     });
     initExactAnnuals();
+    // The locality dropdown is populated from the tax DB after load; stash the
+    // saved selection so refreshLocalityOptions() can reselect it.
+    pendingLocality = state['userLocality'] || '';
   }
   let lockModalMode = 'set';
   function openLockModal(mode) {
@@ -1263,6 +1576,7 @@ const TAX2026 = {
         vaultKey = key; vaultSaltB64 = blob.salt;
         applyState(JSON.parse(new TextDecoder().decode(pt)));
         closeLockModal(); refreshLockBtn(); updatePayLabels();
+        refreshLocalityOptions(); applyTaxCalc();
       } catch (e) { err.textContent = 'Wrong passphrase. Try again.'; }
     }
   }
@@ -1291,6 +1605,8 @@ const TAX2026 = {
     } catch (e) {}
     updatePayLabels();
     initExactAnnuals();
+    refreshLocalityOptions();
+    applyTaxCalc();
   }
 
   function resetDefaults() {
@@ -1494,7 +1810,9 @@ const TAX2026 = {
     var el = document.getElementById(id);
     if (el && !el.getAttribute('data-prev')) el.setAttribute('data-prev', el.value);
   });
-  window.onload = loadSavedState;
+  // Load the tax database first (falls back to the in-file seed if IndexedDB
+  // is unavailable), then restore saved state and calculate.
+  window.onload = function() { TaxDB.init().then(function() { loadSavedState(); }); };
 </script>
 </body>
 </html>
