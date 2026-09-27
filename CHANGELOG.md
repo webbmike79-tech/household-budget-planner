@@ -2,6 +2,11 @@
 
 Notable changes, newest first. The build tag is shown in the app footer.
 
+## 2026.09.27u — 2026-09-27
+- iPhone fix: the numeric-field CSS rule had an invalid selector (space-separated attributes inside one bracket pair), so the whole rule was silently dropped and fields fell back to the 13.33px browser default — below iOS Safari's 16px auto-zoom threshold. Focusing a field zoomed the page and made the fixed number pad appear huge.
+- All 36 numeric inputs now use a stable `num` class for sizing (the selector can't key on inputmode because the touch handler rewrites it to `none`), and every text/select field now computes to at least 16px on mobile.
+- PWA service-worker cache bumped to budget-planner-v7.
+
 ## 2026.09.27t — 2026-09-27
 - The Home / Property Insurance field now takes the annual premium ($/yr) and auto-divides by 12 like the property-tax field does — typing the yearly amount no longer inflates the monthly budget. Note: any previously saved insurance value was stored under the old monthly field and won't carry over; just re-enter the annual premium.
 
