@@ -284,20 +284,20 @@
           <label>Hours Per Week
             <span class="hint">Used only for hourly rate</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="hoursPerWeek" value="" placeholder="40" step="1" oninput="applyTaxCalc()" /></div>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="hoursPerWeek" value="" placeholder="40" step="1" oninput="onHoursInput()" /></div>
         </div>
         <div class="row">
           <label><span id="grossLabel">Gross Annual Income ($/yr)</span>
             <span class="hint" id="taxBreakdownHint">Enter gross pay to estimate take-home</span>
           </label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual" value="" step="1000" oninput="applyTaxCalc()" /></div>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual" value="" step="1000" oninput="onGrossInput(1)" /></div>
         </div>
         <div class="row full">
           <label class="check-label"><input type="checkbox" id="secondIncomeEnabled" onchange="toggleSecondIncome()" /> Add a second income (stays hidden until checked)</label>
         </div>
         <div class="row hidden" id="secondIncomeRow">
           <label>Second Gross Annual Income ($/yr)</label>
-          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual2" value="" step="1000" oninput="applyTaxCalc()" /></div>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual2" value="" step="1000" oninput="onGrossInput(2)" /></div>
         </div>
         <div class="row hidden" id="secondFreqRow">
           <label>Second Pay Frequency</label>
@@ -621,7 +621,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26l</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26m</div>
 
 <script>
 const TAX2026 = {
@@ -886,28 +886,52 @@ const TAX2026 = {
     if (freq === 'hourly') return (hrs || 40) * 52;
     return 1;
   }
-  // When a pay-frequency dropdown changes, convert the entered amount so the
-  // annualized pay stays the same (e.g. $60,000/yr -> ~$28.85/hr) instead of
-  // reinterpreting the same number in the new unit.
-  function convertPayOnFreqChange(inputId, freqId, hrsId) {
+  // Exact-annual tracking: each gross-pay input keeps its precise annualized
+  // value in data-exact, refreshed on every keystroke. Frequency switches
+  // derive the displayed figure from it (rounding display only), so hopping
+  // between units never compounds rounding drift -- a round trip returns the
+  // exact original number.
+  function syncExactAnnual(inputId, freqId, hrsId) {
     var input = document.getElementById(inputId);
-    var freqEl = document.getElementById(freqId);
-    var newFreq = freqEl.value;
-    var oldFreq = freqEl.getAttribute('data-prev') || newFreq;
-    var v = parseFloat(input.value);
-    if (v > 0 && oldFreq !== newFreq) {
-      var hrs = hrsId ? val(hrsId) : 40;
-      var annual = v * freqFactor(oldFreq, hrs);
-      input.value = Math.round(annual / freqFactor(newFreq, hrs) * 100) / 100;
-    }
-    freqEl.setAttribute('data-prev', newFreq);
+    var v = parseFloat(input.value) || 0;
+    var freq = document.getElementById(freqId).value;
+    var hrs = hrsId ? (val(hrsId) || 40) : 40;
+    input.setAttribute('data-exact', String(v * freqFactor(freq, hrs)));
+  }
+  function initExactAnnuals() {
+    syncExactAnnual('grossAnnual', 'payFreq', 'hoursPerWeek');
+    syncExactAnnual('grossAnnual2', 'payFreq2', null);
+  }
+  function onGrossInput(which) {
+    if (which === 1) syncExactAnnual('grossAnnual', 'payFreq', 'hoursPerWeek');
+    else syncExactAnnual('grossAnnual2', 'payFreq2', null);
+    applyTaxCalc();
+  }
+  function onHoursInput() {
+    syncExactAnnual('grossAnnual', 'payFreq', 'hoursPerWeek');
+    applyTaxCalc();
   }
   function onPayFreqChange() {
-    convertPayOnFreqChange('grossAnnual', 'payFreq', 'hoursPerWeek');
+    var input = document.getElementById('grossAnnual');
+    var freqEl = document.getElementById('payFreq');
+    var newFreq = freqEl.value;
+    var exact = parseFloat(input.getAttribute('data-exact')) || 0;
+    if (exact > 0) {
+      var hrs = val('hoursPerWeek') || 40;
+      input.value = Math.round(exact / freqFactor(newFreq, hrs) * 100) / 100;
+    }
+    freqEl.setAttribute('data-prev', newFreq);
     updatePayLabels();
   }
   function onPayFreq2Change() {
-    convertPayOnFreqChange('grossAnnual2', 'payFreq2', null);
+    var input = document.getElementById('grossAnnual2');
+    var freqEl = document.getElementById('payFreq2');
+    var newFreq = freqEl.value;
+    var exact = parseFloat(input.getAttribute('data-exact')) || 0;
+    if (exact > 0) {
+      input.value = Math.round(exact / freqFactor(newFreq, 40) * 100) / 100;
+    }
+    freqEl.setAttribute('data-prev', newFreq);
     applyTaxCalc();
   }
   function updatePayLabels() {
@@ -1190,6 +1214,7 @@ const TAX2026 = {
       var el = document.getElementById(id);
       if (el) el.setAttribute('data-prev', el.value);
     });
+    initExactAnnuals();
   }
   let lockModalMode = 'set';
   function openLockModal(mode) {
@@ -1265,6 +1290,7 @@ const TAX2026 = {
       if (raw) applyState(JSON.parse(raw));
     } catch (e) {}
     updatePayLabels();
+    initExactAnnuals();
   }
 
   function resetDefaults() {
