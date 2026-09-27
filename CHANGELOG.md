@@ -2,6 +2,12 @@
 
 Notable changes, newest first. The build tag is shown in the app footer.
 
+## 2026.09.27p — 2026-09-27
+- The ZIP property-tax estimator now works offline: a bundled 947-prefix ZIP3-to-state table replaces the network lookup, the estimate re-runs when the home value is entered after the ZIP (entry order no longer matters), and it falls back to the selected tax state when a ZIP isn't recognized.
+- The "Add your own…" city/county name field now suggests matching 2026-table entries as you type — tapping a suggestion selects it with its rate, so you never have to know the rate yourself.
+- Locality seed expanded from 47 to 262 verified 2026 records: all 92 Indiana counties, 33 more Ohio cities, 33 Pennsylvania municipalities (resident/nonresident where they differ), 22 more Michigan cities (resident/nonresident), 14 Kentucky cities (wage base), Birmingham (AL), Wilmington (DE), and Multnomah County (OR). Seed version bumped 1→2 so existing installs reseed on the next load.
+
+
 ## 2026.09.27o — 2026-09-27
 - The "Add your own…" city/county name field now gets an in-page alphabetic keyboard on touch devices, the same way numeric fields get the number pad (some mobile viewers never show the OS keyboard). The lock-screen keyboard was rebuilt on the same shared code with no behavior change.
 
