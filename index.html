@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'none'; connect-src https://api.zippopotam.us; object-src 'none'; base-uri 'none'; form-action 'none';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#141a2e" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <script>
+  window.addEventListener('load', function () {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
+  });
+  </script>
+  <title>Household Budget & Car Payoff Planner</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --blue: #1a73e8;
+      --green: #16a34a;
+      --amber: #d97706;
+      --purple: #7e22ce;
+      --red: #dc2626;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; padding: 24px; background: var(--bg); color: var(--text); }
+    .container { max-width: 1180px; margin: 0 auto; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; background: var(--card); padding: 20px 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    h1 { margin: 0; font-size: 1.45rem; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; }
+    button { cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text); padding: 9px 14px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; transition: all 0.15s; }
+    button:hover { background: #f8fafc; border-color: #cbd5e1; }
+    button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    button.primary:hover { background: #1557b0; }
+    button.success { background: var(--green); color: #fff; border-color: var(--green); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .kpi { background: var(--card); padding: 16px 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); border-left: 5px solid var(--blue); }
+    .kpi.cushions { border-left-color: var(--purple); }
+    .kpi.jeep { border-left-color: var(--amber); }
+    .kpi.savings { border-left-color: var(--green); }
+    .kpi.unallocated { border-left-color: #0ea5e9; }
+    .kpi-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .kpi-val { font-size: 1.55rem; font-weight: 700; margin: 6px 0 2px; }
+    .kpi-sub { font-size: 0.8rem; color: var(--muted); }
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); margin-bottom: 20px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; }
+    .card-title { font-size: 1.05rem; font-weight: 700; margin: 0; }
+    .card-badge { font-size: 0.95rem; font-weight: 700; color: var(--blue); }
+    .row { display: grid; grid-template-columns: 1.6fr 1fr; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed #f1f5f9; }
+    .row:last-child { border-bottom: none; }
+    .row label { font-size: 0.9rem; font-weight: 500; }
+    .row .hint { display: block; font-size: 0.76rem; color: var(--muted); font-weight: 400; }
+    .input-wrap { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+    input[type="text" inputmode="decimal" pattern="[0-9.]*"], select { width: 115px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.92rem; font-weight: 600; text-align: right; }
+    select { width: 100%; text-align: left; }
+    input[type="range"] { width: 100%; accent-color: var(--blue); cursor: pointer; }
+    .slider-block { padding: 10px 0; border-bottom: 1px dashed #f1f5f9; }
+    .slider-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .payoff-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 12px; }
+    .payoff-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; margin-top: 8px; }
+    .stat-box { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    .stat-num { font-size: 1.15rem; font-weight: 700; color: var(--green); }
+    .stat-lbl { font-size: 0.75rem; color: var(--muted); }
+    .status-banner { padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-top: 12px; }
+    .status-ok { background: #dcfce7; color: #166534; }
+    .status-warn { background: #fef2f2; color: #991b1b; }
+    @media print { .toolbar { display: none; } body { padding: 0; background: #fff; } }
+  
+    .hidden { display: none; }
+    .row.full { grid-template-columns: 1fr; }
+    .check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem; }
+    .check-label input[type="checkbox"] { width: auto; margin: 0; padding: 0; }
+    .cal-table { width: 100%; border-collapse: collapse; }
+    .cal-table th, .cal-table td { text-align: left; padding: 7px 4px; border-bottom: 1px solid #eee; font-size: 0.93rem; }
+    .cal-table th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+    .cal-table td select { width: 118px; padding: 6px 8px; font-size: 0.9rem; }
+    .cal-table td input[type="text"] { width: 100%; padding: 6px 8px; font-size: 0.9rem; }
+    .cal-table td input[type="text" inputmode="decimal" pattern="[0-9.]*"] { width: 92px; padding: 6px 8px; font-size: 0.9rem; }
+    .cal-amt { font-variant-numeric: tabular-nums; }
+    .week-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+    .week-box { background: #f8f9fa; border-radius: 8px; padding: 8px 10px; }
+    .week-label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+    .week-total { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+    .week-bar-track { height: 8px; background: #e9ecef; border-radius: 4px; margin-top: 6px; overflow: hidden; }
+    .week-bar { height: 100%; background: var(--green); border-radius: 4px; width: 0%; transition: width 0.3s; }
+    @media (max-width: 640px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
+    /* Built-in numeric keypad (touch devices) */
+    #numPad { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999;
+      background: #141a29; border-top: 1px solid #2c3550;
+      padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
+      transform: translateY(110%); transition: transform 0.22s ease; }
+    #numPad.open { transform: translateY(0); }
+    #numPad .np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 520px; margin: 0 auto; }
+    #numPad button { font-size: 1.4rem; padding: 11px 0; border-radius: 10px;
+      border: 1px solid #2c3550; background: #242c44; color: #eef1f8;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+    #numPad button:active { background: #31405f; }
+    #numPad button:focus { outline: none; }
+    #numPad .np-done { grid-column: span 3; font-size: 1rem; font-weight: 700;
+      background: #2e7d4f; border-color: #2e7d4f; padding: 10px 0; }
+    /* Lock modal */
+    .modal-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(10,14,24,0.72);
+      display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: #1a2030; border: 1px solid #2c3550; border-radius: 14px;
+      padding: 22px; width: 100%; max-width: 380px; }
+    .modal-box h3 { margin: 0 0 6px; color: #eef1f8; }
+    .modal-box input[type="password"] { width: 100%; margin-top: 10px; padding: 10px 12px;
+      border-radius: 8px; border: 1px solid #2c3550; background: #242c44; color: #eef1f8; font-size: 1rem; }
+    .modal-err { color: #ff9d9d; font-size: 0.85rem; min-height: 1.2em; margin-top: 8px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Household Budget & Car Payoff Planner</h1>
+      <div class="subtitle">Interactive Budget Planner • Auto-saves changes in your browser • Exportable to Excel/CSV</div>
+    </div>
+    <div class="toolbar">
+      <button class="primary" onclick="exportCSV()">⬇ Export to Excel (CSV)</button>
+      <button class="success" onclick="downloadSelfHTML()">💾 Download Updated HTML File</button>
+      <button onclick="window.print()">🖨 Print / Save PDF</button>
+      <button onclick="resetDefaults()">↺ Reset Defaults</button>
+      <button id="lockBtn" onclick="lockBtnClick()">🔒 Lock saved data</button>
+    </div>
+  </header>
+
+  <!-- Live KPI Summary Bar -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Monthly Net Take-Home</div>
+      <div class="kpi-val" id="kpiIncome">$0.00</div>
+      <div class="kpi-sub" id="kpiIncomeSub">Texas ($0 State Tax)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Base Bills & Reserves</div>
+      <div class="kpi-val" id="kpiBaseExp">$0.00</div>
+      <div class="kpi-sub" id="kpiBasePct">0.0% of Net Pay</div>
+    </div>
+    <div class="kpi cushions">
+      <div class="kpi-label">Food, Med & Need Cushions</div>
+      <div class="kpi-val" id="kpiCushions">$0.00</div>
+      <div class="kpi-sub" id="kpiBufferedTotal">$0.00 Buffered Total</div>
+    </div>
+    <div class="kpi jeep">
+      <div class="kpi-label">Extra Car Principal</div>
+      <div class="kpi-val" id="kpiExtraJeep">$0.00</div>
+      <div class="kpi-sub" id="kpiTotalJeepNote">$0.00/mo Total Payment</div>
+    </div>
+    <div class="kpi savings">
+      <div class="kpi-label">Monthly Savings Deposit</div>
+      <div class="kpi-val" id="kpiSavings">$0.00</div>
+      <div class="kpi-sub" id="kpiAnnualSavings">$0.00/yr Saved</div>
+    </div>
+    <div class="kpi unallocated">
+      <div class="kpi-label">Unallocated Cash Flow</div>
+      <div class="kpi-val" id="kpiRemaining">$0.00</div>
+      <div class="kpi-sub" id="kpiRemainingSub">Extra Checking Buffer</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT COLUMN: Income, Home, Utilities, Car -->
+    <div>
+      <!-- 1. Income Preset & Custom Override -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">1. Income & Take-Home Pay</h2>
+          <span class="card-badge" id="badgeIncome">$0.00/mo</span>
+        </div>
+        <div class="row">
+          <label>Your State
+            <span class="hint">State tax brackets applied to full gross (local taxes not included)</span>
+          </label>
+          <select id="userState" onchange="applyTaxCalc()">
+            <option value="AL">Alabama</option>
+            <option value="AK">Alaska</option>
+            <option value="AZ">Arizona</option>
+            <option value="AR">Arkansas</option>
+            <option value="CA">California</option>
+            <option value="CO">Colorado</option>
+            <option value="CT">Connecticut</option>
+            <option value="DE">Delaware</option>
+            <option value="DC">District of Columbia</option>
+            <option value="FL">Florida</option>
+            <option value="GA">Georgia</option>
+            <option value="HI">Hawaii</option>
+            <option value="ID">Idaho</option>
+            <option value="IL">Illinois</option>
+            <option value="IN">Indiana</option>
+            <option value="IA">Iowa</option>
+            <option value="KS">Kansas</option>
+            <option value="KY">Kentucky</option>
+            <option value="LA">Louisiana</option>
+            <option value="ME">Maine</option>
+            <option value="MD">Maryland</option>
+            <option value="MA">Massachusetts</option>
+            <option value="MI">Michigan</option>
+            <option value="MN">Minnesota</option>
+            <option value="MS">Mississippi</option>
+            <option value="MO">Missouri</option>
+            <option value="MT">Montana</option>
+            <option value="NE">Nebraska</option>
+            <option value="NV">Nevada</option>
+            <option value="NH">New Hampshire</option>
+            <option value="NJ">New Jersey</option>
+            <option value="NM">New Mexico</option>
+            <option value="NY">New York</option>
+            <option value="NC">North Carolina</option>
+            <option value="ND">North Dakota</option>
+            <option value="OH">Ohio</option>
+            <option value="OK">Oklahoma</option>
+            <option value="OR">Oregon</option>
+            <option value="PA">Pennsylvania</option>
+            <option value="RI">Rhode Island</option>
+            <option value="SC">South Carolina</option>
+            <option value="SD">South Dakota</option>
+            <option value="TN">Tennessee</option>
+            <option value="TX" selected>Texas</option>
+            <option value="UT">Utah</option>
+            <option value="VT">Vermont</option>
+            <option value="VA">Virginia</option>
+            <option value="WA">Washington</option>
+            <option value="WV">West Virginia</option>
+            <option value="WI">Wisconsin</option>
+            <option value="WY">Wyoming</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Filing Status</label>
+          <select id="filingStatus" onchange="applyTaxCalc()">
+            <option value="" selected>— Select filing status —</option>
+            <option value="single">Single</option>
+            <option value="mfj">Married Filing Jointly</option>
+            <option value="mfs">Married Filing Separately</option>
+            <option value="hoh">Head of Household</option>
+            <option value="qss">Qualifying Surviving Spouse</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Pay Frequency</label>
+          <select id="payFreq" onchange="updatePayLabels()">
+            <option value="annual" selected>Annual (salary)</option>
+            <option value="monthly">Monthly</option>
+            <option value="semimonthly">Twice a month</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="weekly">Weekly</option>
+            <option value="hourly">Hourly</option>
+          </select>
+        </div>
+        <div class="row hidden" id="hoursPerWeekRow">
+          <label>Hours Per Week
+            <span class="hint">Used only for hourly rate</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="hoursPerWeek" value="" placeholder="40" step="1" oninput="applyTaxCalc()" /></div>
+        </div>
+        <div class="row">
+          <label><span id="grossLabel">Gross Annual Income ($/yr)</span>
+            <span class="hint" id="taxBreakdownHint">Enter gross pay to estimate take-home</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual" value="" step="1000" oninput="applyTaxCalc()" /></div>
+        </div>
+        <div class="row full">
+          <label class="check-label"><input type="checkbox" id="secondIncomeEnabled" onchange="toggleSecondIncome()" /> Add a second income (stays hidden until checked)</label>
+        </div>
+        <div class="row hidden" id="secondIncomeRow">
+          <label>Second Gross Annual Income ($/yr)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="grossAnnual2" value="" step="1000" oninput="applyTaxCalc()" /></div>
+        </div>
+        <div class="row hidden" id="secondFreqRow">
+          <label>Second Pay Frequency</label>
+          <select id="payFreq2" onchange="applyTaxCalc()">
+            <option value="annual" selected>Annual (salary)</option>
+            <option value="monthly">Monthly</option>
+            <option value="semimonthly">Twice a month</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="weekly">Weekly</option>
+            <option value="hourly">Hourly</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Estimated Monthly Take-Home</label>
+          <div class="input-wrap"><strong id="taxNetMo" style="font-size:1rem;">—</strong></div>
+        </div>
+        <div class="row">
+          <label>Select Paycheck Preset
+            <span class="hint">Or type any custom monthly net pay below</span>
+          </label>
+          <select id="incomePreset" onchange="applyPreset()">
+            <option value="" selected>— Choose a preset (optional) —</option>
+            <option value="5425.00">$5,425.00/mo (Single / Dual-Earner W-4, No Benefits)</option>
+            <option value="5720.00">$5,720.00/mo (Married 1-Earner W-4, No Benefits)</option>
+            <option value="5167.13">$5,167.13/mo (Married w/ 6% 401k + $250/mo Health)</option>
+            <option value="4937.96">$4,937.96/mo (Single w/ 6% 401k + $250/mo Health)</option>
+            <option value="custom">Custom Monthly Net Pay</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Monthly Net Take-Home Pay ($)
+            <span class="hint" id="netCalcHint">Auto-filled from gross above, or type your own</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="netIncome" value="" step="25" oninput="markNetManual()" /></div>
+        </div>
+      </div>
+
+      <!-- 2. Paid-Off Home & Land Reserves -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">2. Home & Housing Costs</h2>
+          <span class="card-badge" id="badgeHousing">$0.00/mo</span>
+        </div>
+        <div class="row">
+          <label>Housing Situation</label>
+          <select id="housingStatus" onchange="toggleHousing()">
+            <option value="own" selected>Own — paid off</option>
+            <option value="mortgage">Own — with mortgage</option>
+            <option value="rent">Rent</option>
+          </select>
+        </div>
+        <div class="row hidden" id="housingPaymentRow">
+          <label><span id="housingPaymentLabel">Monthly Mortgage Payment ($/mo)</span></label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="housingPaymentMo" value="" step="25" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Estimated Home Value ($)
+            <span class="hint">Used with ZIP to estimate property tax</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeValue" value="" step="10000" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>ZIP Code
+            <span class="hint" id="zipTaxNote">Enter ZIP + home value to estimate tax</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9]*" id="zipCode" value="" maxlength="5" oninput="zipTaxLookup()" /></div>
+        </div>
+        <div class="row">
+          <label>Annual Property Tax ($/yr)
+            <span class="hint">Auto-divides by 12 mos: <strong id="propTaxMoText">$0.00/mo</strong> — leave at $0 if you rent</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="propTaxAnnual" value="" step="10" oninput="taxManual=true;recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Home / Property Insurance Reserve ($/mo)
+            <span class="hint">$333/mo = $3,996/yr reserve</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeInsMo" value="" step="5" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Home & Land Upkeep / Repairs ($/mo)
+            <span class="hint">HVAC, roof deductible, well/septic, fencing</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="homeMaintMo" value="" step="10" oninput="recalc()" /></div>
+        </div>
+      </div>
+
+      <!-- 3. Utilities & Connectivity -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">3. Monthly Utilities & Connectivity</h2>
+          <span class="card-badge" id="badgeUtil">$0.00/mo</span>
+        </div>
+        <div class="row">
+          <label>Electricity ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="electricMo" value="" step="5" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Water + Trash ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="waterMo" value="" step="5" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Internet & Streaming ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="internetMo" value="" step="5" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Cell Phones (2 Lines) ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="phonesMo" value="" step="5" oninput="recalc()" /></div>
+        </div>
+      </div>
+
+      <!-- 4. Car Operating Calculator -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">4. Car Payment & Auto Insurance</h2>
+          <span class="card-badge" id="badgeJeep">$0.00/mo</span>
+        </div>
+        <div class="row">
+          <label>Base Monthly Car Payment ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="carPaymentMo" value="" step="10" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>6-Month Auto Insurance Premium ($ / 6 mos)
+            <span class="hint">Auto-divides by 6 mos: <strong id="autoInsMoText">$0.00/mo</strong></span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="autoInsSixMo" value="" step="25" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Estimated Monthly Driving (Miles/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="milesMo" value="" step="50" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Fuel Economy (MPG)
+            <span class="hint">Leave blank to use 25 MPG</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="mpg" value="" placeholder="25" step="1" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Local Regular Gas Price ($/gal)
+            <span class="hint">Computed Monthly Fuel: <strong id="fuelMoText">$0.00/mo</strong></span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="gasPrice" value="" step="0.05" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Oil Change Cost ($ per service)
+            <span class="hint">About every 9,000 mi • Monthly oil reserve: <strong id="oilMoText">$0.00/mo</strong></span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="oilCostPerService" value="" step="5" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Tires, Brakes & Registration ($/mo)
+            <span class="hint">$15 tires + $7.50 registration/emissions + $22.50 wear</span>
+          </label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="tiresRegMo" value="" step="5" oninput="recalc()" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Living Base, Cushions, Optional Car Payoff & Savings -->
+    <div>
+      <!-- 5. Base Food, Medical & Lifestyle -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">5. Base Food, Medical & Lifestyle (2 Adults)</h2>
+          <span class="card-badge" id="badgeLiving">$0.00/mo</span>
+        </div>
+        <div class="row">
+          <label>Groceries & Household Supplies Base ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="groceriesMo" value="" step="25" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Dining Out & Weekend Meals ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="diningMo" value="" step="25" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Out-of-Pocket Medical / Dental / Rx Base ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="medicalBaseMo" value="" step="10" oninput="recalc()" /></div>
+        </div>
+        <div class="row">
+          <label>Personal, Hobbies & Projects Base ($/mo)</label>
+          <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="personalMo" value="" step="25" oninput="recalc()" /></div>
+        </div>
+      </div>
+
+      <!-- 6. Dedicated Fluctuation Cushions -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">6. Fluctuation Cushions (Food, Medical & Other)</h2>
+          <span class="card-badge" style="color: var(--purple);" id="badgeCushions">$0.00/mo</span>
+        </div>
+        <div class="slider-block">
+          <div class="slider-top">
+            <label><strong>Food & Grocery Cushion</strong> <span class="hint" style="display:inline;">(Total Groceries + Cushion: <span id="totFoodText">$0</span>/mo)</span></label>
+            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="cushionFood" value="" step="10" oninput="syncSlider('cushionFood','cushionFoodRng'); recalc();" />
+          </div>
+          <input type="range" id="cushionFoodRng" min="0" max="400" step="10" value="" oninput="syncInput('cushionFoodRng','cushionFood'); recalc();" />
+        </div>
+        <div class="slider-block">
+          <div class="slider-top">
+            <label><strong>Medical & Rx Cushion</strong> <span class="hint" style="display:inline;">(Total Medical + Cushion: <span id="totMedText">$0</span>/mo)</span></label>
+            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="cushionMed" value="" step="10" oninput="syncSlider('cushionMed','cushionMedRng'); recalc();" />
+          </div>
+          <input type="range" id="cushionMedRng" min="0" max="400" step="10" value="" oninput="syncInput('cushionMedRng','cushionMed'); recalc();" />
+        </div>
+        <div class="slider-block">
+          <div class="slider-top">
+            <label><strong>Other Needs & Utility Spike Cushion</strong> <span class="hint" style="display:inline;">(Summer AC / unexpected needs)</span></label>
+            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="cushionOther" value="" step="10" oninput="syncSlider('cushionOther','cushionOtherRng'); recalc();" />
+          </div>
+          <input type="range" id="cushionOtherRng" min="0" max="400" step="10" value="" oninput="syncInput('cushionOtherRng','cushionOther'); recalc();" />
+        </div>
+      </div>
+
+      <!-- 7. Optional Surplus Planner: Extra Car Payoff & Monthly Savings -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">7. Optional Surplus Planner: Car Payoff & Savings</h2>
+          <span class="card-badge" style="color: var(--green);" id="badgeSurplusAvail">$0.00/mo Surplus</span>
+        </div>
+
+        <div class="slider-block">
+          <div class="slider-top">
+            <label><strong>Extra Monthly Principal on Car Loan ($/mo)</strong></label>
+            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="extraJeepMo" value="" step="25" oninput="syncSlider('extraJeepMo','extraJeepRng'); recalc();" />
+          </div>
+          <input type="range" id="extraJeepRng" min="0" max="1800" step="25" value="" oninput="syncInput('extraJeepRng','extraJeepMo'); recalc();" />
+        </div>
+
+        <!-- Optional Car Loan Balance & Rate for Payoff Math -->
+        <div class="payoff-box">
+          <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px;">Optional: Car Loan Payoff Estimator</div>
+          <div class="row" style="padding:4px 0;">
+            <label style="font-size:0.82rem;">Estimated Remaining Loan Balance ($)</label>
+            <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="jeepBalance" value="" step="250" oninput="recalc()" /></div>
+          </div>
+          <div class="row" style="padding:4px 0;">
+            <label style="font-size:0.82rem;">Estimated Auto Loan APR (%)</label>
+            <div class="input-wrap"><input type="text" inputmode="decimal" pattern="[0-9.]*" id="jeepApr" value="" step="0.25" oninput="recalc()" /></div>
+          </div>
+          <div class="payoff-stats">
+            <div class="stat-box">
+              <div class="stat-num" id="statMonthsNew">0 mos</div>
+              <div class="stat-lbl">New Payoff Time</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="statMonthsSaved">0 mos sooner</div>
+              <div class="stat-lbl">vs. $488 Base Note</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="statInterestSaved">$0</div>
+              <div class="stat-lbl">Interest Saved</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-block" style="margin-top:10px;">
+          <div class="slider-top">
+            <label><strong>Monthly Transfer to High-Yield Savings ($/mo)</strong></label>
+            <input type="text" inputmode="decimal" pattern="[0-9.]*" id="savingsTransferMo" value="" step="50" oninput="syncSlider('savingsTransferMo','savingsTransferRng'); recalc();" />
+          </div>
+          <input type="range" id="savingsTransferRng" min="0" max="2200" step="50" value="" oninput="syncInput('savingsTransferRng','savingsTransferMo'); recalc();" />
+        </div>
+
+        <div id="statusBanner" class="status-banner status-ok">
+          Enter your numbers above — your balance summary will appear here.
+        </div>
+      </div>
+
+      <!-- 8. Bill Calendar -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">8. Bill Calendar &mdash; Which Week Does It Hit?</h2>
+          <span class="card-badge" id="badgeCalendar">—</span>
+        </div>
+        <table class="cal-table">
+          <thead><tr><th>Bill</th><th>Amount</th><th>Week due</th></tr></thead>
+          <tbody>
+            <tr><td>Car Payment</td><td class="cal-amt" id="calCarAmt">$0.00</td><td><select id="calCarWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Electricity</td><td class="cal-amt" id="calElectricAmt">$0.00</td><td><select id="calElectricWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Water + Trash</td><td class="cal-amt" id="calWaterAmt">$0.00</td><td><select id="calWaterWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Internet & Streaming</td><td class="cal-amt" id="calInternetAmt">$0.00</td><td><select id="calInternetWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td>Cell Phones</td><td class="cal-amt" id="calPhonesAmt">$0.00</td><td><select id="calPhonesWk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom1Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom1Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom1Wk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom2Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom2Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom2Wk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+            <tr><td><input type="text" id="calCustom3Name" placeholder="Other bill" /></td><td><input type="text" inputmode="decimal" pattern="[0-9.]*" id="calCustom3Amt" value="" step="5" oninput="recalc()" /></td><td><select id="calCustom3Wk"><option value="">—</option><option value="1">Week 1 (1st–7th)</option><option value="2">Week 2 (8th–14th)</option><option value="3">Week 3 (15th–21st)</option><option value="4">Week 4 (22nd–end)</option></select></td></tr>
+          </tbody>
+        </table>
+        <div class="week-grid">
+            <div class="week-box">
+              <div class="week-label">Week 1</div>
+              <div class="week-total" id="calWeek1Total">$0.00</div>
+              <div class="week-bar-track"><div class="week-bar" id="calWeek1Bar"></div></div>
+            </div>
+            <div class="week-box">
+              <div class="week-label">Week 2</div>
+              <div class="week-total" id="calWeek2Total">$0.00</div>
+              <div class="week-bar-track"><div class="week-bar" id="calWeek2Bar"></div></div>
+            </div>
+            <div class="week-box">
+              <div class="week-label">Week 3</div>
+              <div class="week-total" id="calWeek3Total">$0.00</div>
+              <div class="week-bar-track"><div class="week-bar" id="calWeek3Bar"></div></div>
+            </div>
+            <div class="week-box">
+              <div class="week-label">Week 4</div>
+              <div class="week-total" id="calWeek4Total">$0.00</div>
+              <div class="week-bar-track"><div class="week-bar" id="calWeek4Bar"></div></div>
+            </div>
+        </div>
+        <div class="hint" id="calNote" style="margin-top:10px;">Assign each bill to its due week above.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="lockModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="lockModalTitle">Lock saved data</h3>
+    <p class="hint" id="lockModalMsg"></p>
+    <input type="password" id="lockPass1" placeholder="Passphrase" autocomplete="new-password" />
+    <div id="lockPass2Row"><input type="password" id="lockPass2" placeholder="Confirm passphrase" autocomplete="new-password" /></div>
+    <div class="modal-err" id="lockModalErr"></div>
+    <div class="modal-actions">
+      <button onclick="closeLockModal()">Cancel</button>
+      <button id="lockModalOk" class="primary" onclick="lockModalOk()">OK</button>
+    </div>
+  </div>
+</div>
+<div id="numPad" aria-hidden="true">
+  <div class="np-grid">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button data-k=".">.</button><button data-k="0">0</button><button data-k="back">⌫</button>
+    <button class="np-done" data-k="done">Done</button>
+  </div>
+</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26h</div>
+
+<script>
+const TAX2026 = {
+  federal: {
+    single_std: 16100, mfj_std: 32200, mfs_std: 16100, hoh_std: 24150, qss_std: 32200,
+    single: [[12400,0.10],[50400,0.12],[105700,0.22],[201775,0.24],[256225,0.32],[640600,0.35],[null,0.37]],
+    mfj:    [[24800,0.10],[100800,0.12],[211400,0.22],[403550,0.24],[512450,0.32],[768700,0.35],[null,0.37]],
+    mfs:    [[12400,0.10],[50400,0.12],[105700,0.22],[201775,0.24],[256225,0.32],[384350,0.35],[null,0.37]],
+    hoh:    [[17700,0.10],[67450,0.12],[105700,0.22],[201750,0.24],[256200,0.32],[640600,0.35],[null,0.37]],
+    qss:    [[24800,0.10],[100800,0.12],[211400,0.22],[403550,0.24],[512450,0.32],[768700,0.35],[null,0.37]]
+  },
+  ss_wage_base: 184500,
+  states: {
+    "AL": { type: "graduated",
+      single: [[500,0.02],[3000,0.04],[null,0.05]],
+      mfj: [[1000,0.02],[6000,0.04],[null,0.05]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "AK": { type: "none" },
+    "AZ": { type: "flat", rate: 0.025 },
+    "AR": { type: "graduated",
+      single: [[4600,0.02],[null,0.039]],
+      mfj: [[4600,0.02],[null,0.039]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "CA": { type: "graduated",
+      single: [[11079,0.01],[26264,0.02],[41452,0.04],[57542,0.06],[72724,0.08],[371479,0.093],[445771,0.103],[742953,0.113],[1000000,0.123],[null,0.133]],
+      mfj: [[22158,0.01],[52528,0.02],[82904,0.04],[115084,0.06],[145448,0.08],[742958,0.093],[891542,0.103],[1000000,0.113],[1485906,0.123],[null,0.133]],
+      mfs: [[11079,0.01],[26264,0.02],[41452,0.04],[57542,0.06],[72724,0.08],[371479,0.093],[445771,0.103],[500000,0.113],[742953,0.123],[null,0.133]],
+      hoh: [[22173,0.01],[52530,0.02],[67716,0.04],[83805,0.06],[98990,0.08],[505208,0.093],[606251,0.103],[1000000,0.113],[1010417,0.123],[null,0.133]],
+      qss: "same as mfj" },
+    "CO": { type: "flat", rate: 0.044 },
+    "CT": { type: "graduated",
+      single: [[10000,0.02],[50000,0.045],[100000,0.055],[200000,0.06],[250000,0.065],[500000,0.069],[null,0.0699]],
+      mfj: [[20000,0.02],[100000,0.045],[200000,0.055],[400000,0.06],[500000,0.065],[1000000,0.069],[null,0.0699]],
+      mfs: "same as single",
+      hoh: [[16000,0.02],[80000,0.045],[160000,0.055],[320000,0.06],[400000,0.065],[800000,0.069],[null,0.0699]],
+      qss: "same as mfj" },
+    "DE": { type: "graduated",
+      single: [[2000,0],[5000,0.022],[10000,0.039],[20000,0.048],[25000,0.052],[60000,0.0555],[null,0.066]],
+      mfj: [[2000,0],[5000,0.022],[10000,0.039],[20000,0.048],[25000,0.052],[60000,0.0555],[null,0.066]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "FL": { type: "none" },
+    "GA": { type: "flat", rate: 0.0519 },
+    "HI": { type: "graduated",
+      single: [[9600,0.014],[14400,0.032],[19200,0.055],[24000,0.064],[36000,0.068],[48000,0.072],[125000,0.076],[175000,0.079],[225000,0.0825],[275000,0.09],[325000,0.10],[null,0.11]],
+      mfj: [[19200,0.014],[28800,0.032],[38400,0.055],[48000,0.064],[72000,0.068],[96000,0.072],[250000,0.076],[350000,0.079],[450000,0.0825],[550000,0.09],[650000,0.10],[null,0.11]],
+      mfs: "same as single",
+      hoh: [[14400,0.014],[21600,0.032],[28800,0.055],[36000,0.064],[54000,0.068],[72000,0.072],[187500,0.076],[262500,0.079],[337500,0.0825],[412500,0.09],[487500,0.10],[null,0.11]],
+      qss: "same as mfj" },
+    "ID": { type: "flat", rate: 0.053 },
+    "IL": { type: "flat", rate: 0.0495 },
+    "IN": { type: "flat", rate: 0.0295 },
+    "IA": { type: "flat", rate: 0.038 },
+    "KS": { type: "graduated",
+      single: [[23000,0.052],[null,0.0558]],
+      mfj: [[46000,0.052],[null,0.0558]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "KY": { type: "flat", rate: 0.035 },
+    "LA": { type: "flat", rate: 0.03 },
+    "ME": { type: "graduated",
+      single: [[27399,0.058],[64849,0.0675],[null,0.0715]],
+      mfj: [[54849,0.058],[129749,0.0675],[null,0.0715]],
+      mfs: "same as single",
+      hoh: [[41100,0.058],[97300,0.0675],[null,0.0715]],
+      qss: "same as mfj" },
+    "MD": { type: "graduated",
+      single: [[1000,0.02],[2000,0.03],[3000,0.04],[100000,0.0475],[125000,0.05],[150000,0.0525],[250000,0.055],[500000,0.0575],[1000000,0.0625],[null,0.065]],
+      mfj: [[1000,0.02],[2000,0.03],[3000,0.04],[150000,0.0475],[175000,0.05],[225000,0.0525],[300000,0.055],[600000,0.0575],[1200000,0.0625],[null,0.065]],
+      mfs: "same as single", hoh: "same as mfj", qss: "same as mfj" },
+    "MA": { type: "graduated",
+      single: [[1083150,0.05],[null,0.09]],
+      mfj: [[1083150,0.05],[null,0.09]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "MI": { type: "flat", rate: 0.0425 },
+    "MN": { type: "graduated",
+      single: [[33310,0.0535],[109430,0.068],[203150,0.0785],[null,0.0985]],
+      mfj: [[48700,0.0535],[193480,0.068],[337930,0.0785],[null,0.0985]],
+      mfs: [[24350,0.0535],[96740,0.068],[168965,0.0785],[null,0.0985]],
+      hoh: [[41010,0.0535],[164800,0.068],[270060,0.0785],[null,0.0985]],
+      qss: "same as mfj" },
+    "MS": { type: "flat", rate: 0.04 },
+    "MO": { type: "graduated",
+      single: [[1348,0],[2696,0.02],[4044,0.025],[5392,0.03],[6740,0.035],[8088,0.04],[9436,0.045],[null,0.047]],
+      mfj: [[1348,0],[2696,0.02],[4044,0.025],[5392,0.03],[6740,0.035],[8088,0.04],[9436,0.045],[null,0.047]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "MT": { type: "graduated",
+      single: [[47500,0.047],[null,0.0565]],
+      mfj: [[95000,0.047],[null,0.0565]],
+      mfs: "same as single",
+      hoh: [[71250,0.047],[null,0.0565]],
+      qss: "same as mfj" },
+    "NE": { type: "graduated",
+      single: [[4130,0.0246],[24760,0.0351],[null,0.0455]],
+      mfj: [[8250,0.0246],[49530,0.0351],[null,0.0455]],
+      mfs: "same as single",
+      hoh: [[7700,0.0246],[39620,0.0351],[null,0.0455]],
+      qss: "same as mfj" },
+    "NV": { type: "none" },
+    "NH": { type: "none", note: "interest/dividends tax repealed as of 2025" },
+    "NJ": { type: "graduated",
+      single: [[20000,0.014],[35000,0.0175],[40000,0.035],[75000,0.0553],[500000,0.0637],[1000000,0.0897],[null,0.1075]],
+      mfj: [[20000,0.014],[50000,0.0175],[70000,0.0245],[80000,0.035],[150000,0.0553],[500000,0.0637],[1000000,0.0897],[null,0.1075]],
+      mfs: "same as single", hoh: "same as mfj", qss: "same as mfj" },
+    "NM": { type: "graduated",
+      single: [[5500,0.015],[16500,0.032],[33500,0.043],[66500,0.047],[210000,0.049],[null,0.059]],
+      mfj: [[8000,0.015],[25000,0.032],[50000,0.043],[100000,0.047],[315000,0.049],[null,0.059]],
+      mfs: [[4000,0.015],[12500,0.032],[25000,0.043],[50000,0.047],[157500,0.049],[null,0.059]],
+      hoh: "same as mfj", qss: "same as mfj" },
+    "NY": { type: "graduated",
+      single: [[8500,0.039],[11700,0.044],[13900,0.0515],[80650,0.054],[215400,0.059],[1077550,0.0685],[5000000,0.0965],[25000000,0.103],[null,0.109]],
+      mfj: [[17150,0.039],[23600,0.044],[27900,0.0515],[161550,0.054],[323200,0.059],[2155350,0.0685],[5000000,0.0965],[25000000,0.103],[null,0.109]],
+      mfs: "same as single",
+      hoh: [[12800,0.039],[17650,0.044],[20900,0.0515],[107650,0.054],[269300,0.059],[1616450,0.0685],[5000000,0.0965],[25000000,0.103],[null,0.109]],
+      qss: "same as mfj" },
+    "NC": { type: "flat", rate: 0.0399 },
+    "ND": { type: "graduated",
+      single: [[49575,0],[250400,0.0195],[null,0.025]],
+      mfj: [[82800,0],[304850,0.0195],[null,0.025]],
+      mfs: [[41400,0],[152425,0.0195],[null,0.025]],
+      hoh: [[66400,0],[277600,0.0195],[null,0.025]],
+      qss: "same as mfj" },
+    "OH": { type: "flat", rate: 0.0275 },
+    "OK": { type: "graduated",
+      single: [[3750,0],[4900,0.025],[7200,0.035],[null,0.045]],
+      mfj: [[7500,0],[9800,0.025],[14400,0.035],[null,0.045]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "OR": { type: "graduated",
+      single: [[4550,0.0475],[11400,0.0675],[125000,0.0875],[null,0.099]],
+      mfj: [[9100,0.0475],[22800,0.0675],[250000,0.0875],[null,0.099]],
+      mfs: "same as single", hoh: "same as mfj", qss: "same as mfj" },
+    "PA": { type: "flat", rate: 0.0307 },
+    "RI": { type: "graduated",
+      single: [[82050,0.0375],[186450,0.0475],[null,0.0599]],
+      mfj: [[82050,0.0375],[186450,0.0475],[null,0.0599]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "SC": { type: "graduated",
+      single: [[30000,0.0199],[null,0.0521]],
+      mfj: [[30000,0.0199],[null,0.0521]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "SD": { type: "none" },
+    "TN": { type: "none" },
+    "TX": { type: "none" },
+    "UT": { type: "flat", rate: 0.045 },
+    "VT": { type: "graduated",
+      single: [[47900,0.0335],[116000,0.066],[242000,0.076],[null,0.0875]],
+      mfj: [[79950,0.0335],[193300,0.066],[294600,0.076],[null,0.0875]],
+      mfs: [[39975,0.0335],[96650,0.066],[147300,0.076],[null,0.0875]],
+      hoh: [[64200,0.0335],[165700,0.066],[268300,0.076],[null,0.0875]],
+      qss: "same as mfj" },
+    "VA": { type: "graduated",
+      single: [[3000,0.02],[5000,0.03],[17000,0.05],[null,0.0575]],
+      mfj: [[3000,0.02],[5000,0.03],[17000,0.05],[null,0.0575]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "WA": { type: "none", note: "no wage tax; tax applies only to capital gains" },
+    "WV": { type: "graduated",
+      single: [[10000,0.0211],[25000,0.0281],[40000,0.0316],[60000,0.0422],[null,0.0458]],
+      mfj: [[10000,0.0211],[25000,0.0281],[40000,0.0316],[60000,0.0422],[null,0.0458]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" },
+    "WI": { type: "graduated",
+      single: [[15110,0.035],[51950,0.044],[332720,0.053],[null,0.0765]],
+      mfj: [[20150,0.035],[69260,0.044],[443630,0.053],[null,0.0765]],
+      mfs: [[10080,0.035],[34630,0.044],[221820,0.053],[null,0.0765]],
+      hoh: "same as single", qss: "same as mfj" },
+    "WY": { type: "none" },
+    "DC": { type: "graduated",
+      single: [[10000,0.04],[40000,0.06],[60000,0.065],[250000,0.085],[500000,0.0925],[1000000,0.0975],[null,0.1075]],
+      mfj: [[10000,0.04],[40000,0.06],[60000,0.065],[250000,0.085],[500000,0.0925],[1000000,0.0975],[null,0.1075]],
+      mfs: "same as single", hoh: "same as single", qss: "same as mfj" }
+  }
+};
+  const FIELD_IDS = [
+    'userState','filingStatus','payFreq','hoursPerWeek','grossAnnual','secondIncomeEnabled','grossAnnual2','payFreq2','housingStatus','housingPaymentMo',
+    'netIncome','incomePreset','homeValue','zipCode','propTaxAnnual','homeInsMo','homeMaintMo',
+    'electricMo','waterMo','internetMo','phonesMo',
+    'carPaymentMo','autoInsSixMo','milesMo','gasPrice','oilCostPerService','tiresRegMo',
+    'groceriesMo','diningMo','medicalBaseMo','personalMo',
+    'cushionFood','cushionMed','cushionOther',
+    'extraJeepMo','jeepBalance','jeepApr','savingsTransferMo',
+    'calCarWk','calElectricWk','calWaterWk','calInternetWk','calPhonesWk',
+    'calCustom1Name','calCustom1Amt','calCustom1Wk',
+    'calCustom2Name','calCustom2Amt','calCustom2Wk',
+    'calCustom3Name','calCustom3Amt','calCustom3Wk'
+  ];
+
+  function fmt(n) {
+    return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function val(id) {
+    return parseFloat(document.getElementById(id).value) || 0;
+  }
+
+  function syncSlider(numId, rngId) {
+    document.getElementById(rngId).value = document.getElementById(numId).value;
+  }
+
+  function syncInput(rngId, numId) {
+    document.getElementById(numId).value = document.getElementById(rngId).value;
+  }
+
+  function applyPreset() {
+    const p = document.getElementById('incomePreset').value;
+    if (p !== 'custom' && p !== '') {
+      document.getElementById('netIncome').value = p;
+      netManual = true;
+      document.getElementById('netCalcHint').textContent = 'Using the preset \u2014 type to override, or use gross above to recalc';
+      recalc();
+    }
+  }
+
+  function calcMonthsAndInterest(balance, apr, monthlyPmt) {
+    if (balance <= 0 || monthlyPmt <= 0) return { months: 0, interest: 0 };
+    const r = (apr / 100) / 12;
+    let b = balance;
+    let months = 0;
+    let totalInterest = 0;
+    while (b > 0.01 && months < 360) {
+      const interest = b * r;
+      if (monthlyPmt <= interest) return { months: 360, interest: 99999 };
+      const principal = Math.min(b, monthlyPmt - interest);
+      totalInterest += interest;
+      b -= principal;
+      months++;
+    }
+    return { months, interest: totalInterest };
+  }
+
+  /* ---------- 2026 tax engine: state picker + filing status ---------- */
+  function resolveSchedule(entry, status) {
+    var s = entry[status], seen = {};
+    while (typeof s === 'string') {
+      var key = s.toLowerCase().replace('same as ', '').replace(/[^a-z]/g, '');
+      if (seen[key] || !entry[key]) break;
+      seen[key] = true;
+      s = entry[key];
+    }
+    return s;
+  }
+  function bracketTax(income, brackets) {
+    var tax = 0, prev = 0;
+    for (var i = 0; i < brackets.length; i++) {
+      var top = (brackets[i][0] === null) ? Infinity : brackets[i][0];
+      var taxable = Math.min(income, top) - prev;
+      if (taxable > 0) tax += taxable * brackets[i][1];
+      prev = top;
+      if (income <= top) break;
+    }
+    return tax;
+  }
+  function toAnnual(amt, freq, hrsPerWk) {
+    if (freq === 'monthly') return amt * 12;
+    if (freq === 'semimonthly') return amt * 24;
+    if (freq === 'biweekly') return amt * 26;
+    if (freq === 'weekly') return amt * 52;
+    if (freq === 'hourly') return amt * (hrsPerWk || 40) * 52;
+    return amt;
+  }
+  function updatePayLabels() {
+    var f = document.getElementById('payFreq').value;
+    var labels = { annual: 'Gross Annual Income ($/yr)', monthly: 'Gross Monthly Income ($/mo)',
+      semimonthly: 'Gross Per Paycheck \u2014 twice/mo ($)', biweekly: 'Gross Per Paycheck \u2014 every 2 wks ($)',
+      weekly: 'Gross Weekly Pay ($/wk)', hourly: 'Hourly Rate ($/hr)' };
+    document.getElementById('grossLabel').textContent = labels[f] || labels.annual;
+    document.getElementById('hoursPerWeekRow').classList.toggle('hidden', f !== 'hourly');
+    applyTaxCalc();
+  }
+  function ficaFor(gross) {
+    return Math.min(gross, TAX2026.ss_wage_base) * 0.062 + gross * 0.0145;
+  }
+  function fedTaxFor(gross, fs) {
+    var fed = TAX2026.federal;
+    var stdKey = {single:'single_std', mfj:'mfj_std', mfs:'mfs_std', hoh:'hoh_std', qss:'qss_std'}[fs];
+    return bracketTax(Math.max(0, gross - (fed[stdKey] || 0)), resolveSchedule(fed, fs));
+  }
+  function stateTaxFor(gross, st, fs) {
+    var se = TAX2026.states[st];
+    if (se.type === 'flat') return gross * se.rate;
+    if (se.type === 'graduated') return bracketTax(gross, resolveSchedule(se, fs));
+    return 0;
+  }
+  function computeTakeHome() {
+    var st = document.getElementById('userState').value;
+    var fs = document.getElementById('filingStatus').value;
+    var g1 = toAnnual(val('grossAnnual'), document.getElementById('payFreq').value, val('hoursPerWeek'));
+    var secondOn = document.getElementById('secondIncomeEnabled').checked;
+    var g2 = secondOn ? toAnnual(val('grossAnnual2'), document.getElementById('payFreq2').value, 40) : 0;
+    if (!st || !fs || !(g1 > 0 || g2 > 0)) return null;
+    var joint = (fs === 'mfj' || fs === 'qss') && g2 > 0;
+    var federal, stateTax;
+    if (joint) {
+      federal = fedTaxFor(g1 + g2, fs);
+      stateTax = stateTaxFor(g1 + g2, st, fs);
+    } else {
+      federal = fedTaxFor(g1, fs) + (g2 > 0 ? fedTaxFor(g2, fs) : 0);
+      stateTax = stateTaxFor(g1, st, fs) + (g2 > 0 ? stateTaxFor(g2, st, fs) : 0);
+    }
+    var fica = ficaFor(g1) + ficaFor(g2);
+    return { gross: g1 + g2, gross2: g2, federal: federal, fica: fica, stateTax: stateTax,
+             netMonthly: (g1 + g2 - federal - fica - stateTax) / 12, state: st, joint: joint };
+  }
+  function toggleHousing() {
+    var hs = document.getElementById('housingStatus').value;
+    var show = hs !== 'own';
+    document.getElementById('housingPaymentRow').classList.toggle('hidden', !show);
+    document.getElementById('housingPaymentLabel').textContent = hs === 'rent' ? 'Monthly Rent Payment ($/mo)' : 'Monthly Mortgage Payment ($/mo)';
+    recalc();
+  }
+  function toggleSecondIncome() {
+    var on = document.getElementById('secondIncomeEnabled').checked;
+    document.getElementById('secondIncomeRow').classList.toggle('hidden', !on);
+    document.getElementById('secondFreqRow').classList.toggle('hidden', !on);
+    applyTaxCalc();
+  }
+  var netManual = false;
+  function applyTaxCalc() {
+    var r = computeTakeHome();
+    var hint = document.getElementById('taxBreakdownHint');
+    if (r) {
+      document.getElementById('netIncome').value = r.netMonthly.toFixed(2);
+      netManual = false;
+      var grossLbl = r.gross2 > 0 ? 'Combined ' + fmt(r.gross) + '/yr' : fmt(r.gross) + '/yr';
+      hint.textContent = grossLbl + ' \u2022 Federal ' + fmt(r.federal/12) + '/mo \u2022 FICA ' + fmt(r.fica/12) + '/mo \u2022 ' + r.state + ' tax ' + fmt(r.stateTax/12) + '/mo';
+      document.getElementById('taxNetMo').textContent = fmt(r.netMonthly) + '/mo';
+      document.getElementById('netCalcHint').textContent = r.gross2 > 0 ? 'Auto-filled from combined gross \u2014 type to override' : 'Auto-filled from your gross pay \u2014 type to override';
+    } else {
+      hint.textContent = 'Enter gross pay to estimate take-home';
+      document.getElementById('taxNetMo').textContent = '\u2014';
+    }
+    recalc();
+  }
+  function markNetManual() {
+    netManual = true;
+    var r = computeTakeHome();
+    document.getElementById('netCalcHint').textContent = r
+      ? 'Using your manual entry (calculated: ' + fmt(r.netMonthly) + '/mo)'
+      : 'Using your manual entry';
+    recalc();
+  }
+
+  function recalc() {
+    const netIncome = val('netIncome');
+
+    // 1. Housing
+    const housingStatus = document.getElementById('housingStatus').value;
+    const housingPaymentMo = (housingStatus !== 'own') ? val('housingPaymentMo') : 0;
+    const propTaxMo = val('propTaxAnnual') / 12;
+    const homeInsMo = val('homeInsMo');
+    const homeMaintMo = val('homeMaintMo');
+    const housingTotal = housingPaymentMo + propTaxMo + homeInsMo + homeMaintMo;
+    document.getElementById('propTaxMoText').textContent = fmt(propTaxMo) + '/mo';
+    document.getElementById('badgeHousing').textContent = fmt(housingTotal) + '/mo';
+
+    // 2. Utilities
+    const utilTotal = val('electricMo') + val('waterMo') + val('internetMo') + val('phonesMo');
+    document.getElementById('badgeUtil').textContent = fmt(utilTotal) + '/mo';
+
+    // 3. Car
+    const carPaymentMo = val('carPaymentMo');
+    const autoInsMo = val('autoInsSixMo') / 6;
+    const milesMo = val('milesMo');
+    const gasPrice = val('gasPrice');
+    const mpg = val('mpg') || 25;
+    const fuelMo = (milesMo / mpg) * gasPrice;
+    const oilMo = (milesMo / 9000) * val('oilCostPerService');
+    const tiresRegMo = val('tiresRegMo');
+    const jeepTotal = carPaymentMo + autoInsMo + fuelMo + oilMo + tiresRegMo;
+
+    document.getElementById('autoInsMoText').textContent = fmt(autoInsMo) + '/mo';
+    document.getElementById('fuelMoText').textContent = fmt(fuelMo) + '/mo';
+    document.getElementById('oilMoText').textContent = fmt(oilMo) + '/mo';
+    document.getElementById('badgeJeep').textContent = fmt(jeepTotal) + '/mo';
+
+    // 4. Base Living
+    const groceriesMo = val('groceriesMo');
+    const diningMo = val('diningMo');
+    const medicalBaseMo = val('medicalBaseMo');
+    const personalMo = val('personalMo');
+    const livingTotal = groceriesMo + diningMo + medicalBaseMo + personalMo;
+    document.getElementById('badgeLiving').textContent = fmt(livingTotal) + '/mo';
+
+    // 5. Cushions
+    const cFood = val('cushionFood');
+    const cMed = val('cushionMed');
+    const cOther = val('cushionOther');
+    const cushionsTotal = cFood + cMed + cOther;
+    document.getElementById('totFoodText').textContent = '$' + (groceriesMo + cFood).toFixed(0);
+    document.getElementById('totMedText').textContent = '$' + (medicalBaseMo + cMed).toFixed(0);
+    document.getElementById('badgeCushions').textContent = fmt(cushionsTotal) + '/mo';
+
+    // Totals
+    const baseExpenses = housingTotal + utilTotal + jeepTotal + livingTotal;
+    const bufferedExpenses = baseExpenses + cushionsTotal;
+    const availableSurplus = netIncome - bufferedExpenses;
+
+    // Optional Surplus Allocations
+    const extraJeepMo = val('extraJeepMo');
+    const savingsTransferMo = val('savingsTransferMo');
+    const remainingCash = availableSurplus - extraJeepMo - savingsTransferMo;
+
+    // Update KPI Cards
+    document.getElementById('kpiIncome').textContent = fmt(netIncome);
+    const _th = computeTakeHome();
+    document.getElementById('kpiIncomeSub').textContent = _th
+      ? (_th.state + ' \u2022 ' + fmt(_th.stateTax/12) + '/mo state tax')
+      : (netIncome > 0 ? 'Manual take-home entry' : 'Pick a state & filing status, or type take-home');
+    document.getElementById('badgeIncome').textContent = fmt(netIncome) + '/mo';
+    document.getElementById('kpiBaseExp').textContent = fmt(baseExpenses);
+    document.getElementById('kpiBasePct').textContent = (netIncome > 0 ? ((baseExpenses / netIncome) * 100).toFixed(1) : 0) + '% of Net Pay';
+    document.getElementById('kpiCushions').textContent = fmt(cushionsTotal);
+    document.getElementById('kpiBufferedTotal').textContent = fmt(bufferedExpenses) + ' Buffered Total';
+    document.getElementById('kpiExtraJeep').textContent = fmt(extraJeepMo);
+    document.getElementById('kpiTotalJeepNote').textContent = fmt(carPaymentMo + extraJeepMo) + '/mo Total Payment';
+    document.getElementById('kpiSavings').textContent = fmt(savingsTransferMo);
+    document.getElementById('kpiAnnualSavings').textContent = fmt(savingsTransferMo * 12) + '/yr Saved';
+    document.getElementById('kpiRemaining').textContent = fmt(remainingCash);
+    document.getElementById('badgeSurplusAvail').textContent = fmt(availableSurplus) + '/mo Surplus';
+
+    // Loan Payoff Math
+    const bal = val('jeepBalance');
+    const apr = val('jeepApr');
+    const baseSchedule = calcMonthsAndInterest(bal, apr, carPaymentMo);
+    const accelSchedule = calcMonthsAndInterest(bal, apr, carPaymentMo + extraJeepMo);
+    const mosSaved = Math.max(0, baseSchedule.months - accelSchedule.months);
+    const intSaved = Math.max(0, baseSchedule.interest - accelSchedule.interest);
+
+    document.getElementById('statMonthsNew').textContent = accelSchedule.months + ' mos';
+    document.getElementById('statMonthsSaved').textContent = mosSaved + ' mos sooner';
+    document.getElementById('statInterestSaved').textContent = '$' + intSaved.toFixed(0);
+
+    // Status Banner
+    const banner = document.getElementById('statusBanner');
+    if (remainingCash >= 0) {
+      banner.className = 'status-banner status-ok';
+      banner.textContent = `✔ Balanced! After ${fmt(cushionsTotal)}/mo in cushions, ${fmt(extraJeepMo)}/mo extra on the car loan, and ${fmt(savingsTransferMo)}/mo to savings, you still have ${fmt(remainingCash)}/mo in unallocated checking buffer.`;
+    } else {
+      banner.className = 'status-banner status-warn';
+      banner.textContent = `⚠ Over-allocated by ${fmt(Math.abs(remainingCash))}/mo. Reduce extra car principal, savings transfer, or expense sliders by ${fmt(Math.abs(remainingCash))}.`;
+    }
+
+
+    // 8. Bill calendar
+    const calBills = [
+      ['calCarAmt', val('carPaymentMo'), 'calCarWk'],
+      ['calElectricAmt', val('electricMo'), 'calElectricWk'],
+      ['calWaterAmt', val('waterMo'), 'calWaterWk'],
+      ['calInternetAmt', val('internetMo'), 'calInternetWk'],
+      ['calPhonesAmt', val('phonesMo'), 'calPhonesWk']
+    ];
+    const weekTotals = [0, 0, 0, 0];
+    calBills.forEach(b => {
+      document.getElementById(b[0]).textContent = fmt(b[1]);
+      const w = parseInt(document.getElementById(b[2]).value) || 0;
+      if (w >= 1 && w <= 4) weekTotals[w - 1] += b[1];
+    });
+    for (let c = 1; c <= 3; c++) {
+      const camt = val('calCustom' + c + 'Amt');
+      const cw = parseInt(document.getElementById('calCustom' + c + 'Wk').value) || 0;
+      if (cw >= 1 && cw <= 4 && camt > 0) weekTotals[cw - 1] += camt;
+    }
+    const maxW = Math.max(...weekTotals, 0);
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('calWeek' + (i + 1) + 'Total').textContent = fmt(weekTotals[i]);
+      document.getElementById('calWeek' + (i + 1) + 'Bar').style.width = maxW > 0 ? (weekTotals[i] / maxW * 100).toFixed(1) + '%' : '0%';
+    }
+    const peak = weekTotals.indexOf(maxW);
+    document.getElementById('badgeCalendar').textContent = maxW > 0 ? ('Peak ' + fmt(maxW) + ' wk ' + (peak + 1)) : '\u2014';
+    document.getElementById('calNote').textContent = maxW > 0
+      ? ('Tightest week is week ' + (peak + 1) + ' at ' + fmt(maxW) + '. Shifting one due date can smooth it out.')
+      : 'Assign each bill to its due week above.';
+
+    // Save state locally in browser (encrypted when locked)
+    persistState();
+  }
+
+  // ---------- Encrypted vault (finding #1) ----------
+  const PLAIN_KEY = 'parkerCountyBudgetStateV2';
+  const ENC_KEY = 'parkerCountyBudgetStateV2_enc';
+  let vaultKey = null, vaultSaltB64 = null;
+  const canEncrypt = !!(window.crypto && crypto.subtle);
+
+  function collectState() {
+    const s = {};
+    FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      s[id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    return s;
+  }
+  function b64encode(buf) {
+    const b = new Uint8Array(buf); let s = '';
+    for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s);
+  }
+  function b64decode(str) {
+    const bin = atob(str); const b = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    return b;
+  }
+  async function deriveVaultKey(passphrase, saltBytes) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  async function persistState() {
+    const state = collectState();
+    try {
+      if (vaultKey && vaultSaltB64) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, vaultKey, new TextEncoder().encode(JSON.stringify(state)));
+        localStorage.setItem(ENC_KEY, JSON.stringify({ v: 1, salt: vaultSaltB64, iv: b64encode(iv), data: b64encode(ct) }));
+      } else {
+        localStorage.setItem(PLAIN_KEY, JSON.stringify(state));
+      }
+    } catch (e) {}
+  }
+  function applyState(state) {
+    FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && state[id] !== undefined) {
+        if (el.type === 'checkbox') el.checked = !!state[id];
+        else el.value = state[id];
+      }
+    });
+    document.getElementById('secondIncomeRow').classList.toggle('hidden', !document.getElementById('secondIncomeEnabled').checked);
+    document.getElementById('secondFreqRow').classList.toggle('hidden', !document.getElementById('secondIncomeEnabled').checked);
+    toggleHousing();
+    syncSlider('cushionFood','cushionFoodRng');
+    syncSlider('cushionMed','cushionMedRng');
+    syncSlider('cushionOther','cushionOtherRng');
+    syncSlider('extraJeepMo','extraJeepRng');
+    syncSlider('savingsTransferMo','savingsTransferRng');
+  }
+  let lockModalMode = 'set';
+  function openLockModal(mode) {
+    lockModalMode = mode;
+    document.getElementById('lockModalTitle').textContent = mode === 'set' ? 'Lock saved data' : 'Enter passphrase';
+    document.getElementById('lockModalMsg').textContent = mode === 'set'
+      ? 'Your budget will be encrypted on this device. You\u2019ll enter this passphrase each visit.'
+      : 'Your saved budget is encrypted. Enter your passphrase to unlock it.';
+    document.getElementById('lockPass2Row').style.display = mode === 'set' ? '' : 'none';
+    document.getElementById('lockPass1').value = '';
+    document.getElementById('lockPass2').value = '';
+    document.getElementById('lockModalErr').textContent = canEncrypt ? '' : 'Encryption is not available in this browser.';
+    document.getElementById('lockModalOk').disabled = !canEncrypt;
+    document.getElementById('lockModal').classList.remove('hidden');
+    setTimeout(function() { document.getElementById('lockPass1').focus(); }, 60);
+  }
+  function closeLockModal() { document.getElementById('lockModal').classList.add('hidden'); }
+  async function lockModalOk() {
+    const p1 = document.getElementById('lockPass1').value;
+    const err = document.getElementById('lockModalErr');
+    if (lockModalMode === 'set') {
+      const p2 = document.getElementById('lockPass2').value;
+      if (p1.length < 4) { err.textContent = 'Use at least 4 characters.'; return; }
+      if (p1 !== p2) { err.textContent = 'Passphrases do not match.'; return; }
+      err.textContent = 'Encrypting\u2026';
+      try {
+        const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+        vaultKey = await deriveVaultKey(p1, saltBytes);
+        vaultSaltB64 = b64encode(saltBytes);
+        await persistState();
+        try { localStorage.removeItem(PLAIN_KEY); } catch (e) {}
+        closeLockModal(); refreshLockBtn();
+      } catch (e) { err.textContent = 'Encryption failed in this browser.'; }
+    } else {
+      err.textContent = 'Unlocking\u2026';
+      try {
+        const blob = JSON.parse(localStorage.getItem(ENC_KEY));
+        const key = await deriveVaultKey(p1, b64decode(blob.salt));
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64decode(blob.iv) }, key, b64decode(blob.data));
+        vaultKey = key; vaultSaltB64 = blob.salt;
+        applyState(JSON.parse(new TextDecoder().decode(pt)));
+        closeLockModal(); refreshLockBtn(); updatePayLabels();
+      } catch (e) { err.textContent = 'Wrong passphrase. Try again.'; }
+    }
+  }
+  function lockBtnClick() {
+    if (vaultKey) {
+      vaultKey = null; vaultSaltB64 = null;
+      try { localStorage.removeItem(ENC_KEY); } catch (e) {}
+      persistState(); refreshLockBtn();
+    } else {
+      let enc = null;
+      try { enc = localStorage.getItem(ENC_KEY); } catch (e) {}
+      openLockModal(enc ? 'unlock' : 'set');
+    }
+  }
+  function refreshLockBtn() {
+    document.getElementById('lockBtn').textContent = vaultKey ? '\uD83D\uDD13 Data locked' : '\uD83D\uDD12 Lock saved data';
+  }
+
+  function loadSavedState() {
+    let enc = null;
+    try { enc = localStorage.getItem(ENC_KEY); } catch (e) {}
+    if (enc) { openLockModal('unlock'); return; }   // updatePayLabels runs after unlock
+    try {
+      const raw = localStorage.getItem(PLAIN_KEY);
+      if (raw) applyState(JSON.parse(raw));
+    } catch (e) {}
+    updatePayLabels();
+  }
+
+  function resetDefaults() {
+    try { localStorage.removeItem(PLAIN_KEY); localStorage.removeItem(ENC_KEY); } catch(e) {}
+    vaultKey = null; vaultSaltB64 = null;
+    location.reload();
+  }
+
+  function csvCell(c) {
+    var s = String(c);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // neutralize spreadsheet formula injection
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function exportCSV() {
+    const rows = [
+      ['Category', 'Line Item', 'Monthly Amount ($)', 'Annual Amount ($)'],
+      ['Income', 'Monthly Net Take-Home Pay', val('netIncome').toFixed(2), (val('netIncome')*12).toFixed(2)],
+      ['Home & Housing', 'Mortgage / Rent Payment', ((document.getElementById('housingStatus').value !== 'own') ? val('housingPaymentMo') : 0).toFixed(2), (((document.getElementById('housingStatus').value !== 'own') ? val('housingPaymentMo') : 0)*12).toFixed(2)],
+      ['Home & Housing', 'Property Tax', (val('propTaxAnnual')/12).toFixed(2), val('propTaxAnnual').toFixed(2)],
+      ['Home & Housing', 'Home / Property Insurance Reserve', val('homeInsMo').toFixed(2), (val('homeInsMo')*12).toFixed(2)],
+      ['Home & Housing', 'Home & Land Upkeep / Repairs', val('homeMaintMo').toFixed(2), (val('homeMaintMo')*12).toFixed(2)],
+      ['Utilities', 'Electricity', val('electricMo').toFixed(2), (val('electricMo')*12).toFixed(2)],
+      ['Utilities', 'Water + Trash', val('waterMo').toFixed(2), (val('waterMo')*12).toFixed(2)],
+      ['Utilities', 'Internet & Streaming', val('internetMo').toFixed(2), (val('internetMo')*12).toFixed(2)],
+      ['Utilities', 'Cell Phones', val('phonesMo').toFixed(2), (val('phonesMo')*12).toFixed(2)],
+      ['Car', 'Base Car Payment', val('carPaymentMo').toFixed(2), (val('carPaymentMo')*12).toFixed(2)],
+      ['Car', 'Auto Insurance Sinking Fund', (val('autoInsSixMo')/6).toFixed(2), (val('autoInsSixMo')*2).toFixed(2)],
+      ['Car', 'Fuel', ((val('milesMo')/(val('mpg')||25))*val('gasPrice')).toFixed(2), (((val('milesMo')/(val('mpg')||25))*val('gasPrice'))*12).toFixed(2)],
+      ['Car', 'Oil Change Reserve', ((val('milesMo')/9000)*val('oilCostPerService')).toFixed(2), (((val('milesMo')/9000)*val('oilCostPerService'))*12).toFixed(2)],
+      ['Car', 'Tires, Brakes & Registration', val('tiresRegMo').toFixed(2), (val('tiresRegMo')*12).toFixed(2)],
+      ['Base Living', 'Groceries & Household Supplies', val('groceriesMo').toFixed(2), (val('groceriesMo')*12).toFixed(2)],
+      ['Base Living', 'Dining Out & Weekend Meals', val('diningMo').toFixed(2), (val('diningMo')*12).toFixed(2)],
+      ['Base Living', 'Out-of-Pocket Medical / Rx Base', val('medicalBaseMo').toFixed(2), (val('medicalBaseMo')*12).toFixed(2)],
+      ['Base Living', 'Personal, Hobbies & Projects', val('personalMo').toFixed(2), (val('personalMo')*12).toFixed(2)],
+      ['Fluctuation Cushions', 'Food & Grocery Cushion', val('cushionFood').toFixed(2), (val('cushionFood')*12).toFixed(2)],
+      ['Fluctuation Cushions', 'Medical & Rx Cushion', val('cushionMed').toFixed(2), (val('cushionMed')*12).toFixed(2)],
+      ['Fluctuation Cushions', 'Other Needs & Utility Spike Cushion', val('cushionOther').toFixed(2), (val('cushionOther')*12).toFixed(2)],
+      ['Surplus Allocation', 'Extra Monthly Principal on Car Loan', val('extraJeepMo').toFixed(2), (val('extraJeepMo')*12).toFixed(2)],
+      ['Surplus Allocation', 'Monthly Transfer to High-Yield Savings', val('savingsTransferMo').toFixed(2), (val('savingsTransferMo')*12).toFixed(2)]
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.map(csvCell).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', 'Household_Monthly_Budget.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function downloadSelfHTML() {
+    FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === 'checkbox') {
+        if (el.checked) el.setAttribute('checked', '');
+        else el.removeAttribute('checked');
+      } else if (el.tagName === 'SELECT') {
+        Array.from(el.options).forEach(o => {
+          if (o.value === el.value) o.setAttribute('selected', '');
+          else o.removeAttribute('selected');
+        });
+      } else {
+        el.setAttribute('value', el.value);
+      }
+    });
+    const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Household_Budget_Planner.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // ZIP -> estimated property tax (median state effective rates, % of home value).
+  // Estimates only -- actual bills come from the county appraisal district.
+  const STATE_TAX_RATE = { AL:0.41,AK:1.04,AZ:0.63,AR:0.62,CA:0.75,CO:0.55,CT:1.80,DE:0.58,DC:0.55,
+    FL:0.86,GA:0.87,HI:0.32,ID:0.69,IL:2.08,IN:0.81,IA:1.43,KS:1.29,KY:0.83,LA:0.55,ME:1.09,MD:1.02,
+    MA:1.14,MI:1.38,MN:1.05,MS:0.81,MO:0.97,MT:0.75,NE:1.61,NV:0.60,NH:1.89,NJ:2.47,NM:0.78,NY:1.73,
+    NC:0.77,ND:0.98,OH:1.36,OK:0.90,OR:0.82,PA:1.49,RI:1.40,SC:0.55,SD:1.10,TN:0.64,TX:1.68,UT:0.58,
+    VT:1.76,VA:0.82,WA:0.87,WV:0.58,WI:1.63,WY:0.56 };
+  let taxManual = false, zipTimer = null;
+  function zipTaxLookup() {
+    const zip = (document.getElementById('zipCode').value || '').replace(/\D/g, '').slice(0, 5);
+    const note = document.getElementById('zipTaxNote');
+    clearTimeout(zipTimer);
+    if (zip.length !== 5) return;
+    if (document.getElementById('housingStatus').value === 'rent') { note.textContent = 'Renters skip property tax.'; return; }
+    const hv = val('homeValue');
+    if (!hv) { note.textContent = 'Enter your home value to estimate tax.'; return; }
+    if (taxManual) { note.textContent = 'Using your entered tax amount.'; return; }
+    note.textContent = 'Looking up ' + zip + '\u2026';
+    zipTimer = setTimeout(async () => {
+      try {
+        const r = await fetch('https://api.zippopotam.us/us/' + zip);
+        if (!r.ok) throw 0;
+        const j = await r.json();
+        const st = (j.places && j.places[0] && j.places[0]['state abbreviation']) || '';
+        const rate = STATE_TAX_RATE[st];
+        if (!rate) throw 0;
+        document.getElementById('propTaxAnnual').value = Math.round(hv * rate / 100);
+        note.textContent = 'Estimate: ' + st + ' median ' + rate.toFixed(2) + '% of home value.';
+        recalc();
+      } catch (e) { note.textContent = 'Could not look up that ZIP.'; }
+    }, 400);
+  }
+
+  // Built-in numeric keypad: touch devices get an in-page number pad so entry
+  // never depends on the viewer showing the OS numeric keyboard.
+  (function() {
+    var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (!isTouch) return;
+    var pad = document.getElementById('numPad');
+    var numInputs = Array.prototype.slice.call(document.querySelectorAll('input[inputmode="decimal"]'));
+    var active = null;
+    numInputs.forEach(function(el) {
+      el.setAttribute('inputmode', 'none');   // suppress OS keyboard; pad handles entry
+      el.setAttribute('autocomplete', 'off');
+    });
+    function isNumInput(el) { return el && el.tagName === 'INPUT' && numInputs.indexOf(el) !== -1; }
+    document.addEventListener('focusin', function(e) {
+      if (pad.contains(e.target)) return;    // taps on pad buttons keep it open
+      if (isNumInput(e.target)) {
+        active = e.target;
+        pad.classList.add('open');
+        pad.setAttribute('aria-hidden', 'false');
+        setTimeout(function() { try { active.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {} }, 250);
+      } else {
+        pad.classList.remove('open');
+        pad.setAttribute('aria-hidden', 'true');
+        active = null;
+      }
+    });
+    pad.addEventListener('click', function(e) {
+      var btn = e.target.closest ? e.target.closest('button') : null;
+      if (!btn || !active) return;
+      var k = btn.getAttribute('data-k');
+      var v = active.value || '';
+      if (k === 'done') { active.blur(); pad.classList.remove('open'); active = null; return; }
+      if (k === 'back') { v = v.slice(0, -1); }
+      else if (k === '.') { if (v.indexOf('.') === -1) v = (v === '' ? '0' : v) + '.'; }
+      else { v = v + k; }
+      active.value = v;
+      active.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  })();
+
+  window.onload = loadSavedState;
+</script>
+</body>
+</html>
