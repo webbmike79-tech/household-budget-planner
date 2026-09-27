@@ -2,6 +2,9 @@
 
 Notable changes, newest first. The build tag is shown in the app footer.
 
+## 2026.09.27s — 2026-09-27
+- The footer now credits the builder: "Created by Speakeasy Support".
+
 ## 2026.09.27r — 2026-09-27
 - New "401(k) Contribution" dropdown (0%–15%) in the income section: the percent comes out of gross pre-tax for income tax and lowers the estimated take-home; it also flows into the paycheck presets. The old fixed 6%-plus-health presets are gone.
 - The paycheck presets now reprice live from what you actually enter — "$10/hour" no longer shows the $80k-salary numbers. Two options, Single and Married Filing Jointly, priced through the same tax engine as the main estimate, including your 401(k) percent.
