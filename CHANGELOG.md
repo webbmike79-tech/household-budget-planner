@@ -2,6 +2,14 @@
 
 Notable changes, newest first. The build tag is shown in the app footer.
 
+## 2026.09.27r — 2026-09-27
+- New "401(k) Contribution" dropdown (0%–15%) in the income section: the percent comes out of gross pre-tax for income tax and lowers the estimated take-home; it also flows into the paycheck presets. The old fixed 6%-plus-health presets are gone.
+- The paycheck presets now reprice live from what you actually enter — "$10/hour" no longer shows the $80k-salary numbers. Two options, Single and Married Filing Jointly, priced through the same tax engine as the main estimate, including your 401(k) percent.
+- Typing your own monthly net pay clears the preset so later gross edits don't overwrite it; a selected preset stays live and re-prices when gross, hours, frequency, state, or locality change.
+
+## 2026.09.27q — 2026-09-27
+- Saved county (and city) tax rates now auto-fill from the on-device tax database when the name exactly matches a table entry, and the City/County kind switches to match. Manually typed rates are never overwritten, graduated localities aren't forced into the flat-rate field, and saving an exact table match selects the existing entry instead of adding a duplicate.
+
 ## 2026.09.27p — 2026-09-27
 - The ZIP property-tax estimator now works offline: a bundled 947-prefix ZIP3-to-state table replaces the network lookup, the estimate re-runs when the home value is entered after the ZIP (entry order no longer matters), and it falls back to the selected tax state when a ZIP isn't recognized.
 - The "Add your own…" city/county name field now suggests matching 2026-table entries as you type — tapping a suggestion selects it with its rate, so you never have to know the rate yourself.
