@@ -98,14 +98,14 @@
     #numPad .np-done { grid-column: span 3; font-size: 1rem; font-weight: 700;
       background: #2e7d4f; border-color: #2e7d4f; padding: 10px 0; }
     /* In-page keyboard for passphrase entry (touch devices) */
-    #alphaPad { margin-top: 12px; }
-    #alphaPad .ap-row { display: flex; gap: 6px; margin-bottom: 6px; }
-    #alphaPad button { flex: 1 1 0; min-width: 0; font-size: 1rem; padding: 9px 0; border-radius: 8px;
+    #alphaPad, #locPad { margin-top: 12px; }
+    #alphaPad .ap-row, #locPad .ap-row { display: flex; gap: 6px; margin-bottom: 6px; }
+    #alphaPad button, #locPad button { flex: 1 1 0; min-width: 0; font-size: 1rem; padding: 9px 0; border-radius: 8px;
       border: 1px solid #2c3550; background: #242c44; color: #eef1f8;
       touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer; }
-    #alphaPad button:active { background: #31405f; }
-    #alphaPad button.ap-wide { flex: 2.2 1 0; font-size: 0.85rem; }
-    #alphaPad button.ap-done { background: #2e7d4f; border-color: #2e7d4f; font-weight: 700; }
+    #alphaPad button:active, #locPad button:active { background: #31405f; }
+    #alphaPad button.ap-wide, #locPad button.ap-wide { flex: 2.2 1 0; font-size: 0.85rem; }
+    #alphaPad button.ap-done, #locPad button.ap-done { background: #2e7d4f; border-color: #2e7d4f; font-weight: 700; }
     /* Lock panel (in-flow card; no overlay) */
     #lockPanel input[type="password"] { font-size: 1rem; }
     .modal-err { color: #ff9d9d; font-size: 0.85rem; min-height: 1.2em; margin-top: 8px; }
@@ -269,6 +269,7 @@
             <input type="text" inputmode="decimal" id="customLocRate" placeholder="Rate %" style="flex:1; min-width:70px;" />
             <button type="button" id="customLocAdd" onclick="saveCustomLocality()">Add</button>
           </div>
+          <div id="locPad" class="hidden"></div>
         </div>
         <div class="row">
           <label>Filing Status</label>
@@ -633,7 +634,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.27n</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.27o</div>
 
 <script>
 /* ---------- Tax database: seed data (v1) ----------
@@ -1254,6 +1255,7 @@ var TaxDB = (function() {
     if (!found) sel.selectedIndex = 0;
     pendingLocality = '';
     document.getElementById('customLocalityRow').classList.toggle('hidden', sel.value !== '__custom');
+    if (window.__hideLocPad) window.__hideLocPad();
   }
   function onStateChange() {
     pendingLocality = '';
@@ -1263,6 +1265,7 @@ var TaxDB = (function() {
   function onLocalityChange() {
     var sel = document.getElementById('userLocality');
     document.getElementById('customLocalityRow').classList.toggle('hidden', sel.value !== '__custom');
+    if (window.__hideLocPad) window.__hideLocPad();
     if (sel.value !== '__custom') applyTaxCalc();  // recalc() persists the selection
   }
   function saveCustomLocality() {
@@ -1755,26 +1758,18 @@ var TaxDB = (function() {
     });
   })();
 
-  // In-page keyboard inside the lock panel. Some mobile viewers never show the
-  // OS keyboard, so these keys type into the passphrase fields directly. The
-  // fields stay editable so normal typing still works where it does appear.
-  (function() {
-    var pad = document.getElementById('alphaPad');
-    var p1 = document.getElementById('lockPass1');
-    var p2 = document.getElementById('lockPass2');
-    if (!pad || !p1 || !p2) return;
-    var active = p1, page = 0;
+  // In-page alphabetic keyboard builder. Some mobile viewers never show the
+  // OS keyboard, so these keys type into the target field directly. Fields
+  // stay editable so normal typing still works where it does appear.
+  function buildAlphaPad(pad, getTarget, onDone) {
+    if (!pad || !getTarget) return;
+    var page = 0;
     var pages = [
       ['1234567890', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm'],
       ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'],
       ['!@#$%^&*()', '-_+=[]{}<>', ":,.?'\" + '/~`"]
     ];
     var pageNames = ['ABC', 'abc', '#+='];
-    function setActive(el) { active = el; }
-    [p1, p2].forEach(function(el) {
-      el.addEventListener('click', function() { setActive(el); });
-      el.addEventListener('focus', function() { setActive(el); });
-    });
     function keyBtn(label, cls, fn) {
       var b = document.createElement('button');
       b.type = 'button'; b.textContent = label;
@@ -1782,25 +1777,74 @@ var TaxDB = (function() {
       b.addEventListener('click', fn);
       return b;
     }
+    function typeInto(s) {
+      var t = getTarget();
+      if (!t) return;
+      t.value = (t.value || '') + s;
+      t.dispatchEvent(new Event('input', { bubbles: true }));
+    }
     function render() {
       pad.innerHTML = '';
       pages[page].forEach(function(row) {
         var div = document.createElement('div');
         div.className = 'ap-row';
         row.split('').forEach(function(ch) {
-          div.appendChild(keyBtn(ch, '', function() { active.value = (active.value || '') + ch; }));
+          div.appendChild(keyBtn(ch, '', function() { typeInto(ch); }));
         });
         pad.appendChild(div);
       });
       var bar = document.createElement('div');
       bar.className = 'ap-row';
       bar.appendChild(keyBtn(pageNames[page], 'ap-wide', function() { page = (page + 1) % pages.length; render(); }));
-      bar.appendChild(keyBtn('space', 'ap-wide', function() { active.value = (active.value || '') + ' '; }));
-      bar.appendChild(keyBtn('\u232B', 'ap-wide', function() { active.value = (active.value || '').slice(0, -1); }));
-      bar.appendChild(keyBtn('Done', 'ap-wide ap-done', function() { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }));
+      bar.appendChild(keyBtn('space', 'ap-wide', function() { typeInto(' '); }));
+      bar.appendChild(keyBtn('\u232B', 'ap-wide', function() {
+        var t = getTarget(); if (!t) return;
+        t.value = (t.value || '').slice(0, -1);
+        t.dispatchEvent(new Event('input', { bubbles: true }));
+      }));
+      bar.appendChild(keyBtn('Done', 'ap-wide ap-done', function() {
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        if (onDone) onDone();
+      }));
       pad.appendChild(bar);
     }
     render();
+  }
+
+  // Lock panel keyboard (targets whichever passphrase field was tapped last).
+  (function() {
+    var pad = document.getElementById('alphaPad');
+    var p1 = document.getElementById('lockPass1');
+    var p2 = document.getElementById('lockPass2');
+    if (!pad || !p1 || !p2) return;
+    var active = p1;
+    [p1, p2].forEach(function(el) {
+      el.addEventListener('click', function() { active = el; });
+      el.addEventListener('focus', function() { active = el; });
+    });
+    buildAlphaPad(pad, function() { return active; });
+  })();
+
+  // City/county name keyboard. Touch devices get an in-page keyboard for the
+  // locality name field, the same way numeric fields get the number pad.
+  (function() {
+    var isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    var pad = document.getElementById('locPad');
+    var nameField = document.getElementById('customLocName');
+    if (!pad || !nameField) return;
+    function hide() { pad.classList.add('hidden'); }
+    function show() {
+      if (document.getElementById('customLocalityRow').classList.contains('hidden')) return;
+      pad.classList.remove('hidden');
+    }
+    buildAlphaPad(pad, function() { return nameField; }, hide);
+    if (isTouch) {
+      nameField.setAttribute('inputmode', 'none');  // suppress OS keyboard; pad handles entry
+      nameField.setAttribute('autocomplete', 'off');
+      nameField.addEventListener('focus', show);
+      nameField.addEventListener('click', show);
+    }
+    window.__hideLocPad = hide;
   })();
 
   // Remember each pay-frequency dropdown's starting unit on every page load,

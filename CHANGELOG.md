@@ -2,6 +2,9 @@
 
 Notable changes, newest first. The build tag is shown in the app footer.
 
+## 2026.09.27o — 2026-09-27
+- The "Add your own…" city/county name field now gets an in-page alphabetic keyboard on touch devices, the same way numeric fields get the number pad (some mobile viewers never show the OS keyboard). The lock-screen keyboard was rebuilt on the same shared code with no behavior change.
+
 ## 2026.09.27n — 2026-09-27
 - Tax tables now live in an on-device IndexedDB database (federal, all 50 states + DC, and city/county local taxes) instead of being baked into the page. If the database is unavailable the app falls back to the built-in tables, so it keeps working offline either way.
 - New optional City/County tax picker under the state selector, seeded with 47 verified 2026 local income taxes: New York City and Yonkers (NY), all 23 Maryland counties plus Baltimore City, 6 Ohio cities, Philadelphia and Pittsburgh (PA), St. Louis and Kansas City (MO), Louisville and Lexington-Fayette (KY), Detroit and Grand Rapids (MI), and 3 Indiana counties. Coverage is curated, not nationwide — "Add your own…" covers any locality the list doesn't have.
