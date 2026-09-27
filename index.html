@@ -621,7 +621,7 @@
     <button class="np-done" data-k="done">Done</button>
   </div>
 </div>
-<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26k</div>
+<div style="text-align:center; color:#8b93a7; font-size:0.75rem; padding:18px 0 26px;">Household Budget &amp; Car Payoff Planner • build 2026.09.26l</div>
 
 <script>
 const TAX2026 = {
@@ -1461,6 +1461,13 @@ const TAX2026 = {
     render();
   })();
 
+  // Remember each pay-frequency dropdown's starting unit on every page load,
+  // so the first frequency change converts from the right unit even when
+  // there is no saved state to restore (applyState updates it after a restore).
+  ['payFreq', 'payFreq2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el.getAttribute('data-prev')) el.setAttribute('data-prev', el.value);
+  });
   window.onload = loadSavedState;
 </script>
 </body>
