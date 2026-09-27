@@ -3,7 +3,7 @@
 Notable changes, newest first. The build tag is shown in the app footer.
 
 ## 2026.09.27s — 2026-09-27
-- The footer now credits the builder: "Created by Speakeasy Support".
+- The footer now credits the builders: "Created by Speakeasy Support & Fenrir".
 
 ## 2026.09.27r — 2026-09-27
 - New "401(k) Contribution" dropdown (0%–15%) in the income section: the percent comes out of gross pre-tax for income tax and lowers the estimated take-home; it also flows into the paycheck presets. The old fixed 6%-plus-health presets are gone.
